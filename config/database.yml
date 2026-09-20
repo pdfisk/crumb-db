@@ -1,0 +1,25 @@
+# Heroku: DATABASE_URL is set automatically by the Heroku Postgres add-on
+# and takes precedence over everything below.
+#
+# Local: values come from .env (see .env.example). Set DATABASE_URL in .env
+# instead if you want to point your local app at the remote database.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+  host: <%= ENV.fetch("DB_HOST", "localhost") %>
+  port: <%= ENV.fetch("DB_PORT", 5432) %>
+  username: <%= ENV.fetch("DB_USER", "admin") %>
+  password: <%= ENV["DB_PASSWORD"] %>
+
+development:
+  <<: *default
+  database: <%= ENV.fetch("DB_NAME", "cobol_studio") %>
+
+test:
+  <<: *default
+  database: <%= ENV.fetch("DB_TEST_NAME", "cobol_studio_test") %>
+
+production:
+  <<: *default
+  url: <%= ENV["DATABASE_URL"] %>

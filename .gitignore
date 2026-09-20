@@ -1,0 +1,16 @@
+/.bundle
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+!/tmp/pids/
+/tmp/pids/*
+!/tmp/pids/.keep
+/config/master.key
+/config/credentials/*.key
+
+# Local secrets
+.env
+.env.*
+!.env.example
+config.txt
