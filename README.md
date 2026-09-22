@@ -16,14 +16,14 @@ Prereqs: Ruby 3.2+, Bundler, PostgreSQL running with the `admin` user.
 ```bash
 cd server
 bundle install
-copy .env.example .env     # then set DB_PASSWORD in .env
+copy .env.example .env     # then set DATABASE_URL in .env
 bin/rails db:create      # skip if cobol_studio already exists
 bin/rails db:migrate
 bin/rails db:seed        # optional sample rows
 bin/rails server         # http://localhost:3000
 ```
 
-To point your local app at the remote database, uncomment `DATABASE_URL` in `.env`.
+To point your local app at the remote database, change `DATABASE_URL` in `.env` to the Heroku URL (`heroku config:get DATABASE_URL`).
 
 ## Deploy to Heroku
 
