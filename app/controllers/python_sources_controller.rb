@@ -45,6 +45,6 @@ class PythonSourcesController < ApplicationController
   end
 
   def record_params
-    params.require(:python_source).permit(:name, :content)
+    params.require(:python_source).permit(:name, :content, :priority, :compiled)
   end
 end
