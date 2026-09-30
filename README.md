@@ -1,11 +1,17 @@
 # Server — Rails API (PostgreSQL, Heroku)
 
-Rails 8 API-only app exposing JSON CRUD for two tables:
+Rails 8 API-only app exposing JSON CRUD for three tables:
 
 | Table           | Columns                                          | Endpoint          |
 |-----------------|--------------------------------------------------|-------------------|
 | `python_source` | `name:string`, `content:text`, timestamps        | `/python_sources` |
 | `basic_source`  | `name:string`, `content:text`, timestamps        | `/basic_sources`  |
+| `viewport`      | `name:string` (unique), `content:jsonb`, timestamps | `/viewports`   |
+
+`viewport` holds saved FastBlip screens: the JSON a program's Viewport writes
+(`vp.save("name")` / `vp.load("name")`). `content` must be a JSON object with
+`"format": "fastblip-viewport"`; it is sent and returned as an object, not a
+string.
 
 Health check: `GET /up`
 
@@ -57,6 +63,9 @@ curl -X POST http://localhost:3000/basic_sources \
 curl -X PATCH http://localhost:3000/basic_sources/1 -H "Content-Type: application/json" \
   -d '{"basic_source":{"content":"10 PRINT \"HI\""}}'
 curl -X DELETE http://localhost:3000/basic_sources/1
+curl http://localhost:3000/viewports?name=main
+curl -X POST http://localhost:3000/viewports -H "Content-Type: application/json" \
+  -d '{"viewport":{"name":"main","content":{"format":"fastblip-viewport","version":1,"widgets":[],"windows":[]}}}'
 ```
 
 ## Secrets

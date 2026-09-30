@@ -4,4 +4,5 @@ Rails.application.routes.draw do
 
   resources :python_sources
   resources :basic_sources
+  resources :viewports
 end
