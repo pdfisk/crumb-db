@@ -1,4 +1,6 @@
 class BasicSource < ApplicationRecord
+  include CompiledCodeAlias
+
   self.table_name = "basic_source"
 
   validates :name, presence: true

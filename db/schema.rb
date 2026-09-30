@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_29_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_30_000001) do
   create_schema "_heroku"
 
   # These are extensions that must be enabled in order to support this database
@@ -82,5 +82,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_29_000001) do
     t.timestamptz "updated_at", default: -> { "CURRENT_TIMESTAMP" }
 
     t.unique_constraint ["file_name"], name: "python_source_files_file_name_key"
+  end
+
+  create_table "viewport", force: :cascade do |t|
+    t.string "name", null: false
+    t.jsonb "content", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_viewport_on_name", unique: true
   end
 end

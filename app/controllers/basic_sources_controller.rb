@@ -45,6 +45,6 @@ class BasicSourcesController < ApplicationController
   end
 
   def record_params
-    params.require(:basic_source).permit(:name, :content, :priority, :compiled)
+    params.require(:basic_source).permit(:name, :content, :priority, :compiled, :compiled_code)
   end
 end

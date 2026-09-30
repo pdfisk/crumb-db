@@ -8,6 +8,11 @@ Rails 8 API-only app exposing JSON CRUD for three tables:
 | `basic_source`  | `name:string`, `content:text`, timestamps        | `/basic_sources`  |
 | `viewport`      | `name:string` (unique), `content:jsonb`, timestamps | `/viewports`   |
 
+`basic_source` and `python_source` also have `priority` (1–5) and `compiled`
+(compiled code, JSON text). The crumb client calls that field
+`compiled_code`: both names are accepted when saving, and records are
+returned with both.
+
 `viewport` holds saved FastBlip screens: the JSON a program's Viewport writes
 (`vp.save("name")` / `vp.load("name")`). `content` must be a JSON object with
 `"format": "fastblip-viewport"`; it is sent and returned as an object, not a
