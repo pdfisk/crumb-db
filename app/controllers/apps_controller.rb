@@ -8,11 +8,13 @@
 # had a table of its own. Their routes fix the language (see routes.rb), so
 # they list, find, create and change only apps in that language.
 class AppsController < ApplicationController
+  include OwnerParams
+
   before_action :set_record, only: %i[show update destroy]
 
-  # GET /apps  (optional ?name= ?language= ?owner_id= ?visibility= filters)
+  # GET /apps  (optional ?name= ?owner= ?language= ?owner_id= ?visibility= filters)
   def index
-    records = apps.order(:id)
+    records = in_space(apps).order(:id)
     records = records.where(name: params[:name]) if params[:name].present?
     unless fixed_language
       %i[language owner_id visibility].each do |field|
@@ -69,10 +71,13 @@ class AppsController < ApplicationController
 
   def record_params
     if fixed_language
-      params.require(:"#{fixed_language}_source").permit(:name, :content, :priority, :compiled, :compiled_code)
+      body = params.require(:"#{fixed_language}_source")
+      attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code)
     else
-      params.require(:app).permit(:name, :content, :priority, :compiled, :compiled_code,
-                                  :language, :owner_id, :visibility, :version)
+      body = params.require(:app)
+      attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code,
+                          :language, :owner_id, :visibility, :version)
     end
+    with_owner(attrs, body)
   end
 end

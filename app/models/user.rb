@@ -2,6 +2,7 @@
 # kept to letters, digits, "-" and "_".
 class User < ApplicationRecord
   has_many :apps, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error
+  has_many :viewports, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: { case_sensitive: false },
                    format: { with: /\A[a-z0-9][a-z0-9_-]{1,29}\z/i,

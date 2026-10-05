@@ -1,11 +1,14 @@
 # A saved FastBlip screen: the JSON a program's Viewport writes with
 # toJson / save ({ "format": "fastblip-viewport", "version": 1, ... }).
 class Viewport < ApplicationRecord
+  include Owned
+
   self.table_name = "viewport"
 
   FORMAT = "fastblip-viewport".freeze
 
-  validates :name, presence: true, uniqueness: true
+  # One screen or composite per name in each user's space, and in the shared one.
+  validates :name, presence: true, uniqueness: { scope: :owner_id }
   validate :content_must_be_a_saved_viewport
 
   private

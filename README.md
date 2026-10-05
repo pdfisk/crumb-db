@@ -28,9 +28,31 @@ filters. The body's key is `app`: `{"app":{"name":"hello","language":"basic","co
 expects: each is `/apps` limited to one language, with the body's key
 `basic_source` or `python_source`. Records have new ids.
 
-`users` has no endpoint and no credentials yet, and nothing checks
-`owner_id` or `visibility`: any client can still read and change any app.
-Both wait on sign-in.
+## Namespaces
+
+Apps, screens and composites belong to a user's space, and a name is unique
+within it: two users can each have a `login`, one user cannot have two. A
+record with no owner is in the **shared space**, where everything was before
+there were users. (Shared apps may still repeat a name, as the old tables
+allowed; shared screens may not.)
+
+Records are returned with `"owner"`: the user's name, or `null` when shared.
+
+| Request | Does |
+|---|---|
+| `GET /apps?owner=peter` | the apps in peter's space (none if there is no such user) |
+| `GET /apps?owner=` | the apps in the shared space |
+| `GET /apps` | every app |
+| `POST /apps` body `{"app":{"owner":"peter", ...}}` | creates it in peter's space |
+| `PATCH /apps/:id` body `{"app":{"owner":""}}` | moves it to the shared space |
+
+`/viewports` takes `owner` the same way. User names match whatever their
+case.
+
+`users` has no endpoint and no credentials yet. Until there is sign-in,
+naming an owner who does not exist creates that user, and nothing checks
+who is asking or an app's `visibility`: any client can still read and
+change any record in any space.
 
 `viewport` holds saved FastBlip screens: the JSON a program's Viewport writes
 (`vp.save("name")` / `vp.load("name")`). `content` must be a JSON object with

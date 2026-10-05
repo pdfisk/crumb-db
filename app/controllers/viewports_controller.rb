@@ -1,9 +1,11 @@
 class ViewportsController < ApplicationController
+  include OwnerParams
+
   before_action :set_record, only: %i[show update destroy]
 
-  # GET /viewports  (optional ?name= filter)
+  # GET /viewports  (optional ?name= ?owner= filters)
   def index
-    records = Viewport.order(:id)
+    records = in_space(Viewport.all).order(:id)
     records = records.where(name: params[:name]) if params[:name].present?
     render json: records
   end
@@ -52,6 +54,6 @@ class ViewportsController < ApplicationController
       raw = params[:viewport][:content]
       attrs[:content] = raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw
     end
-    attrs
+    with_owner(attrs, params[:viewport])
   end
 end

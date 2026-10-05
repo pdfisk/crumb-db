@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_05_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_05_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -27,22 +27,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_05_000002) do
     t.datetime "updated_at", null: false
     t.index ["language", "name"], name: "index_apps_on_language_and_name"
     t.index ["name"], name: "index_apps_on_name"
+    t.index ["owner_id", "name"], name: "index_apps_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"
     t.index ["owner_id"], name: "index_apps_on_owner_id"
     t.check_constraint "language::text = ANY (ARRAY['basic'::character varying, 'python'::character varying]::text[])", name: "apps_language_known"
     t.check_constraint "priority >= 1 AND priority <= 5", name: "apps_priority_range"
     t.check_constraint "version >= 1", name: "apps_version_positive"
     t.check_constraint "visibility::text = ANY (ARRAY['public'::character varying, 'unlisted'::character varying, 'private'::character varying]::text[])", name: "apps_visibility_known"
-  end
-
-  create_table "basic_source", force: :cascade do |t|
-    t.string "name"
-    t.text "content"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.integer "priority", default: 3, null: false
-    t.text "compiled"
-    t.index ["name"], name: "index_basic_source_on_name"
-    t.check_constraint "priority >= 1 AND priority <= 5", name: "basic_source_priority_range"
   end
 
   create_table "cobol_models", force: :cascade do |t|
@@ -90,26 +80,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_05_000002) do
     t.unique_constraint ["file_name"], name: "jcl_source_files_file_name_key"
   end
 
-  create_table "python_source", force: :cascade do |t|
-    t.string "name"
-    t.text "content"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.integer "priority", default: 3, null: false
-    t.text "compiled"
-    t.index ["name"], name: "index_python_source_on_name"
-    t.check_constraint "priority >= 1 AND priority <= 5", name: "python_source_priority_range"
-  end
-
-  create_table "python_source_files", id: :serial, force: :cascade do |t|
-    t.string "file_name", limit: 512, null: false
-    t.text "content", null: false
-    t.timestamptz "created_at", default: -> { "CURRENT_TIMESTAMP" }
-    t.timestamptz "updated_at", default: -> { "CURRENT_TIMESTAMP" }
-
-    t.unique_constraint ["file_name"], name: "python_source_files_file_name_key"
-  end
-
   create_table "users", force: :cascade do |t|
     t.string "name", null: false
     t.string "email"
@@ -124,8 +94,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_05_000002) do
     t.jsonb "content", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_viewport_on_name", unique: true
+    t.bigint "owner_id"
+    t.index ["name"], name: "index_viewport_on_name_shared", unique: true, where: "(owner_id IS NULL)"
+    t.index ["owner_id", "name"], name: "index_viewport_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"
+    t.index ["owner_id"], name: "index_viewport_on_owner_id"
   end
 
   add_foreign_key "apps", "users", column: "owner_id"
+  add_foreign_key "viewport", "users", column: "owner_id"
 end

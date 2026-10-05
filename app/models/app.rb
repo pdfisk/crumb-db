@@ -3,13 +3,16 @@
 # per language.
 class App < ApplicationRecord
   include CompiledCodeAlias
+  include Owned
 
   LANGUAGES = %w[basic python].freeze
   VISIBILITIES = %w[public unlisted private].freeze
 
-  belongs_to :owner, class_name: "User", optional: true, inverse_of: :apps
-
   validates :name, presence: true
+  # One app per name in a user's space. The shared space allows repeats, as
+  # the tables it came from did.
+  validates :name, uniqueness: { scope: :owner_id, message: "is already the name of one of this user's apps" },
+                   if: :owner_id?
   validates :language, inclusion: { in: LANGUAGES }
   validates :visibility, inclusion: { in: VISIBILITIES }
   validates :version, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
