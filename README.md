@@ -1,17 +1,36 @@
 # Server — Rails API (PostgreSQL, Heroku)
 
-Rails 8 API-only app exposing JSON CRUD for three tables:
+Rails 8 API-only app exposing JSON CRUD for these tables:
 
-| Table           | Columns                                          | Endpoint          |
-|-----------------|--------------------------------------------------|-------------------|
-| `python_source` | `name:string`, `content:text`, timestamps        | `/python_sources` |
-| `basic_source`  | `name:string`, `content:text`, timestamps        | `/basic_sources`  |
-| `viewport`      | `name:string` (unique), `content:jsonb`, timestamps | `/viewports`   |
+| Table      | Columns                                                                 | Endpoint     |
+|------------|-------------------------------------------------------------------------|--------------|
+| `apps`     | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, timestamps | `/apps` |
+| `users`    | `name` (unique), `email` (unique, optional), timestamps                 | none yet     |
+| `viewport` | `name:string` (unique), `content:jsonb`, timestamps                     | `/viewports` |
 
-`basic_source` and `python_source` also have `priority` (1–5) and `compiled`
-(compiled code, JSON text). The crumb client calls that field
-`compiled_code`: both names are accepted when saving, and records are
-returned with both.
+`apps` holds every program, whatever its language. It replaces the
+`basic_source` and `python_source` tables, whose rows were copied into it
+(those two tables are still in the database, unused, as a backup).
+
+| Column       | Values                                                              |
+|--------------|---------------------------------------------------------------------|
+| `language`   | `basic` or `python`; required                                       |
+| `owner_id`   | a `users` id, or null (every app copied from the old tables)        |
+| `visibility` | `public` (default), `unlisted` or `private`                         |
+| `version`    | starts at 1 and goes up by one each time `content` changes          |
+| `priority`   | 1 to 5, default 3                                                   |
+| `compiled`   | compiled code, JSON text. The crumb client calls it `compiled_code`: both names are accepted when saving, and records are returned with both |
+
+`GET /apps` takes `?name=`, `?language=`, `?owner_id=` and `?visibility=`
+filters. The body's key is `app`: `{"app":{"name":"hello","language":"basic","content":"..."}}`.
+
+`/basic_sources` and `/python_sources` still answer, as the crumb client
+expects: each is `/apps` limited to one language, with the body's key
+`basic_source` or `python_source`. Records have new ids.
+
+`users` has no endpoint and no credentials yet, and nothing checks
+`owner_id` or `visibility`: any client can still read and change any app.
+Both wait on sign-in.
 
 `viewport` holds saved FastBlip screens: the JSON a program's Viewport writes
 (`vp.save("name")` / `vp.load("name")`). `content` must be a JSON object with
@@ -68,6 +87,9 @@ curl -X POST http://localhost:3000/basic_sources \
 curl -X PATCH http://localhost:3000/basic_sources/1 -H "Content-Type: application/json" \
   -d '{"basic_source":{"content":"10 PRINT \"HI\""}}'
 curl -X DELETE http://localhost:3000/basic_sources/1
+curl "http://localhost:3000/apps?language=python"
+curl -X POST http://localhost:3000/apps -H "Content-Type: application/json" \
+  -d '{"app":{"name":"hello","language":"basic","content":"Print \"Hello\""}}'
 curl http://localhost:3000/viewports?name=main
 curl -X POST http://localhost:3000/viewports -H "Content-Type: application/json" \
   -d '{"viewport":{"name":"main","content":{"format":"fastblip-viewport","version":1,"widgets":[],"windows":[]}}}'

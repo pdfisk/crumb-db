@@ -10,9 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_30_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_05_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "apps", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "content"
+    t.string "language", null: false
+    t.bigint "owner_id"
+    t.string "visibility", default: "public", null: false
+    t.integer "version", default: 1, null: false
+    t.integer "priority", default: 3, null: false
+    t.text "compiled"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["language", "name"], name: "index_apps_on_language_and_name"
+    t.index ["name"], name: "index_apps_on_name"
+    t.index ["owner_id"], name: "index_apps_on_owner_id"
+    t.check_constraint "language::text = ANY (ARRAY['basic'::character varying, 'python'::character varying]::text[])", name: "apps_language_known"
+    t.check_constraint "priority >= 1 AND priority <= 5", name: "apps_priority_range"
+    t.check_constraint "version >= 1", name: "apps_version_positive"
+    t.check_constraint "visibility::text = ANY (ARRAY['public'::character varying, 'unlisted'::character varying, 'private'::character varying]::text[])", name: "apps_visibility_known"
+  end
 
   create_table "basic_source", force: :cascade do |t|
     t.string "name"
@@ -90,6 +110,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_30_000001) do
     t.unique_constraint ["file_name"], name: "python_source_files_file_name_key"
   end
 
+  create_table "users", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
+    t.index "lower((name)::text)", name: "index_users_on_lower_name", unique: true
+  end
+
   create_table "viewport", force: :cascade do |t|
     t.string "name", null: false
     t.jsonb "content", default: {}, null: false
@@ -97,4 +126,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_30_000001) do
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_viewport_on_name", unique: true
   end
+
+  add_foreign_key "apps", "users", column: "owner_id"
 end
