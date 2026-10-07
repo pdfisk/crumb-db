@@ -1,7 +1,7 @@
-# An account: the owner of apps. The name appears in addresses, so it is
+# An account: the owner of scripts. The name appears in addresses, so it is
 # kept to letters, digits, "-" and "_".
 class User < ApplicationRecord
-  has_many :apps, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error
+  has_many :scripts, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error
   has_many :viewports, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: { case_sensitive: false },

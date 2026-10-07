@@ -4,12 +4,12 @@ Rails 8 API-only app exposing JSON CRUD for these tables:
 
 | Table      | Columns                                                                 | Endpoint     |
 |------------|-------------------------------------------------------------------------|--------------|
-| `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, `shared`, `project_name`, timestamps | `/apps` |
+| `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, `shared`, `project_name`, timestamps | `/scripts` |
 | `users`    | `name` (unique), `email` (unique, optional), timestamps                 | none yet     |
 | `viewport` | `name:string` (unique), `content:jsonb`, timestamps                     | `/viewports` |
 
-`scripts` holds every program, whatever its language. It was called `apps`
-until it was renamed; the model is still `App` and the address still `/apps`.
+`scripts` holds every program, whatever its language. The table was called
+`apps`, its model `App` and its address `/apps` until they were renamed.
 It replaces the `basic_source` and `python_source` tables, whose rows were
 copied into it (those two tables are still in the database, unused, as a backup).
 
@@ -24,30 +24,30 @@ copied into it (those two tables are still in the database, unused, as a backup)
 | `project_name` | the project the script belongs to, or null                        |
 | `compiled`   | compiled code, JSON text. The crumb client calls it `compiled_code`: both names are accepted when saving, and records are returned with both |
 
-`GET /apps` takes `?name=`, `?language=`, `?owner_id=` and `?visibility=`
-filters. The body's key is `app`: `{"app":{"name":"hello","language":"basic","content":"..."}}`.
+`GET /scripts` takes `?name=`, `?language=`, `?owner_id=` and `?visibility=`
+filters. The body's key is `script`: `{"script":{"name":"hello","language":"basic","content":"..."}}`.
 
-`/basic_sources` and `/python_sources` still answer, as the crumb client
-expects: each is `/apps` limited to one language, with the body's key
-`basic_source` or `python_source`. Records have new ids.
+`/basic_sources` and `/python_sources` still answer: each is `/scripts`
+limited to one language, with the body's key `basic_source` or
+`python_source`. Records have new ids.
 
 ## Namespaces
 
-Apps, screens and composites belong to a user's space, and a name is unique
+Scripts, screens and composites belong to a user's space, and a name is unique
 within it: two users can each have a `login`, one user cannot have two. A
 record with no owner is in the **shared space**, where everything was before
-there were users. (Shared apps may still repeat a name, as the old tables
+there were users. (Shared scripts may still repeat a name, as the old tables
 allowed; shared screens may not.)
 
 Records are returned with `"owner"`: the user's name, or `null` when shared.
 
 | Request | Does |
 |---|---|
-| `GET /apps?owner=peter` | the apps in peter's space (none if there is no such user) |
-| `GET /apps?owner=` | the apps in the shared space |
-| `GET /apps` | every app |
-| `POST /apps` body `{"app":{"owner":"peter", ...}}` | creates it in peter's space |
-| `PATCH /apps/:id` body `{"app":{"owner":""}}` | moves it to the shared space |
+| `GET /scripts?owner=peter` | the scripts in peter's space (none if there is no such user) |
+| `GET /scripts?owner=` | the scripts in the shared space |
+| `GET /scripts` | every script |
+| `POST /scripts` body `{"script":{"owner":"peter", ...}}` | creates it in peter's space |
+| `PATCH /scripts/:id` body `{"script":{"owner":""}}` | moves it to the shared space |
 
 `/viewports` takes `owner` the same way. User names match whatever their
 case.
@@ -112,9 +112,9 @@ curl -X POST http://localhost:3000/basic_sources \
 curl -X PATCH http://localhost:3000/basic_sources/1 -H "Content-Type: application/json" \
   -d '{"basic_source":{"content":"10 PRINT \"HI\""}}'
 curl -X DELETE http://localhost:3000/basic_sources/1
-curl "http://localhost:3000/apps?language=python"
-curl -X POST http://localhost:3000/apps -H "Content-Type: application/json" \
-  -d '{"app":{"name":"hello","language":"basic","content":"Print \"Hello\""}}'
+curl "http://localhost:3000/scripts?language=python"
+curl -X POST http://localhost:3000/scripts -H "Content-Type: application/json" \
+  -d '{"script":{"name":"hello","language":"basic","content":"Print \"Hello\""}}'
 curl http://localhost:3000/viewports?name=main
 curl -X POST http://localhost:3000/viewports -H "Content-Type: application/json" \
   -d '{"viewport":{"name":"main","content":{"format":"fastblip-viewport","version":1,"widgets":[],"windows":[]}}}'

@@ -9,7 +9,7 @@
 # constraints were named by hand, so they are renamed here: nothing in the
 # database is left called apps.
 #
-# The model is still App and the address is still /apps (see app/models/app.rb).
+# The model is Script (it was App) and the address /scripts (it was /apps).
 class RenameAppsToScripts < ActiveRecord::Migration[8.0]
   CHECKS = %w[language_known visibility_known version_positive priority_range].freeze
 

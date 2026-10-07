@@ -2,11 +2,8 @@
 # compiled code. Replaces BasicSource and PythonSource, which were one table
 # per language.
 #
-# The table is scripts (it was apps); the class and the /apps address keep
-# their names, so the crumb client is unchanged.
-class App < ApplicationRecord
-  self.table_name = "scripts"
-
+# It was called App, and its table apps, before both were renamed.
+class Script < ApplicationRecord
   include CompiledCodeAlias
   include Owned
 
@@ -14,9 +11,9 @@ class App < ApplicationRecord
   VISIBILITIES = %w[public unlisted private].freeze
 
   validates :name, presence: true
-  # One app per name in a user's space. The shared space allows repeats, as
+  # One script per name in a user's space. The shared space allows repeats, as
   # the tables it came from did.
-  validates :name, uniqueness: { scope: :owner_id, message: "is already the name of one of this user's apps" },
+  validates :name, uniqueness: { scope: :owner_id, message: "is already the name of one of this user's scripts" },
                    if: :owner_id?
   validates :language, inclusion: { in: LANGUAGES }
   validates :visibility, inclusion: { in: VISIBILITIES }
