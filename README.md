@@ -4,13 +4,14 @@ Rails 8 API-only app exposing JSON CRUD for these tables:
 
 | Table      | Columns                                                                 | Endpoint     |
 |------------|-------------------------------------------------------------------------|--------------|
-| `apps`     | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, timestamps | `/apps` |
+| `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, `shared`, `project_name`, timestamps | `/apps` |
 | `users`    | `name` (unique), `email` (unique, optional), timestamps                 | none yet     |
 | `viewport` | `name:string` (unique), `content:jsonb`, timestamps                     | `/viewports` |
 
-`apps` holds every program, whatever its language. It replaces the
-`basic_source` and `python_source` tables, whose rows were copied into it
-(those two tables are still in the database, unused, as a backup).
+`scripts` holds every program, whatever its language. It was called `apps`
+until it was renamed; the model is still `App` and the address still `/apps`.
+It replaces the `basic_source` and `python_source` tables, whose rows were
+copied into it (those two tables are still in the database, unused, as a backup).
 
 | Column       | Values                                                              |
 |--------------|---------------------------------------------------------------------|
@@ -19,6 +20,8 @@ Rails 8 API-only app exposing JSON CRUD for these tables:
 | `visibility` | `public` (default), `unlisted` or `private`                         |
 | `version`    | starts at 1 and goes up by one each time `content` changes          |
 | `priority`   | 1 to 5, default 3                                                   |
+| `shared`     | `true` or `false` (default)                                         |
+| `project_name` | the project the script belongs to, or null                        |
 | `compiled`   | compiled code, JSON text. The crumb client calls it `compiled_code`: both names are accepted when saving, and records are returned with both |
 
 `GET /apps` takes `?name=`, `?language=`, `?owner_id=` and `?visibility=`

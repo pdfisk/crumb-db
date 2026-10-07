@@ -1,7 +1,12 @@
 # A FastBlips program: its source, the language it is written in, and its
 # compiled code. Replaces BasicSource and PythonSource, which were one table
 # per language.
+#
+# The table is scripts (it was apps); the class and the /apps address keep
+# their names, so the crumb client is unchanged.
 class App < ApplicationRecord
+  self.table_name = "scripts"
+
   include CompiledCodeAlias
   include Owned
 
@@ -17,6 +22,7 @@ class App < ApplicationRecord
   validates :visibility, inclusion: { in: VISIBILITIES }
   validates :version, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validates :priority, numericality: { only_integer: true, in: 1..5 }
+  validates :shared, inclusion: { in: [true, false] }
   validate :compiled_code_must_be_valid_json
 
   # Each change to the source is a new version, unless the save sets one.

@@ -72,11 +72,13 @@ class AppsController < ApplicationController
   def record_params
     if fixed_language
       body = params.require(:"#{fixed_language}_source")
-      attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code)
+      attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code,
+                          :shared, :project_name)
     else
       body = params.require(:app)
       attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code,
-                          :language, :owner_id, :visibility, :version)
+                          :language, :owner_id, :visibility, :version,
+                          :shared, :project_name)
     end
     with_owner(attrs, body)
   end

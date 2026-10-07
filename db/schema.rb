@@ -10,30 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_05_000003) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_07_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
-
-  create_table "apps", force: :cascade do |t|
-    t.string "name", null: false
-    t.text "content"
-    t.string "language", null: false
-    t.bigint "owner_id"
-    t.string "visibility", default: "public", null: false
-    t.integer "version", default: 1, null: false
-    t.integer "priority", default: 3, null: false
-    t.text "compiled"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["language", "name"], name: "index_apps_on_language_and_name"
-    t.index ["name"], name: "index_apps_on_name"
-    t.index ["owner_id", "name"], name: "index_apps_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"
-    t.index ["owner_id"], name: "index_apps_on_owner_id"
-    t.check_constraint "language::text = ANY (ARRAY['basic'::character varying, 'python'::character varying]::text[])", name: "apps_language_known"
-    t.check_constraint "priority >= 1 AND priority <= 5", name: "apps_priority_range"
-    t.check_constraint "version >= 1", name: "apps_version_positive"
-    t.check_constraint "visibility::text = ANY (ARRAY['public'::character varying, 'unlisted'::character varying, 'private'::character varying]::text[])", name: "apps_visibility_known"
-  end
 
   create_table "cobol_models", force: :cascade do |t|
     t.text "file_name", null: false
@@ -80,6 +59,29 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_05_000003) do
     t.unique_constraint ["file_name"], name: "jcl_source_files_file_name_key"
   end
 
+  create_table "scripts", force: :cascade do |t|
+    t.string "name", null: false
+    t.text "content"
+    t.string "language", null: false
+    t.bigint "owner_id"
+    t.string "visibility", default: "public", null: false
+    t.integer "version", default: 1, null: false
+    t.integer "priority", default: 3, null: false
+    t.text "compiled"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "shared", default: false, null: false
+    t.string "project_name"
+    t.index ["language", "name"], name: "index_scripts_on_language_and_name"
+    t.index ["name"], name: "index_scripts_on_name"
+    t.index ["owner_id", "name"], name: "index_scripts_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"
+    t.index ["owner_id"], name: "index_scripts_on_owner_id"
+    t.check_constraint "language::text = ANY (ARRAY['basic'::character varying, 'python'::character varying]::text[])", name: "scripts_language_known"
+    t.check_constraint "priority >= 1 AND priority <= 5", name: "scripts_priority_range"
+    t.check_constraint "version >= 1", name: "scripts_version_positive"
+    t.check_constraint "visibility::text = ANY (ARRAY['public'::character varying, 'unlisted'::character varying, 'private'::character varying]::text[])", name: "scripts_visibility_known"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name", null: false
     t.string "email"
@@ -100,6 +102,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_05_000003) do
     t.index ["owner_id"], name: "index_viewport_on_owner_id"
   end
 
-  add_foreign_key "apps", "users", column: "owner_id"
+  add_foreign_key "scripts", "users", column: "owner_id"
   add_foreign_key "viewport", "users", column: "owner_id"
 end
