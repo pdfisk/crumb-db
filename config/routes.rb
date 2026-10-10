@@ -9,4 +9,6 @@ Rails.application.routes.draw do
   resources :basic_sources, controller: "scripts", defaults: { language: "basic" }
   resources :python_sources, controller: "scripts", defaults: { language: "python" }
   resources :viewports
+  resources :projects
+  resources :users, only: %i[create show]
 end

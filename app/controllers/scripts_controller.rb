@@ -12,12 +12,13 @@ class ScriptsController < ApplicationController
 
   before_action :set_record, only: %i[show update destroy]
 
-  # GET /scripts  (optional ?name= ?owner= ?language= ?owner_id= ?visibility= filters)
+  # GET /scripts  (optional ?name= ?owner= ?language= ?owner_id= ?visibility=
+  # ?project_name= filters)
   def index
     records = in_space(scripts).order(:id)
     records = records.where(name: params[:name]) if params[:name].present?
     unless fixed_language
-      %i[language owner_id visibility].each do |field|
+      %i[language owner_id visibility project_name].each do |field|
         records = records.where(field => params[field]) if params[field].present?
       end
     end
