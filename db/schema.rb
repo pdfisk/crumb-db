@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_07_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_13_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -59,6 +59,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_07_000002) do
     t.unique_constraint ["file_name"], name: "jcl_source_files_file_name_key"
   end
 
+  create_table "project_scripts", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "script_id", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "position"], name: "index_project_scripts_on_project_id_and_position"
+    t.index ["project_id", "script_id"], name: "index_project_scripts_on_project_id_and_script_id", unique: true
+    t.index ["project_id"], name: "index_project_scripts_on_project_id"
+    t.index ["script_id"], name: "index_project_scripts_on_script_id"
+  end
+
   create_table "projects", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -82,11 +94,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_07_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "shared", default: false, null: false
-    t.string "project_name"
     t.index ["language", "name"], name: "index_scripts_on_language_and_name"
     t.index ["name"], name: "index_scripts_on_name"
     t.index ["owner_id", "name"], name: "index_scripts_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"
-    t.index ["owner_id", "project_name"], name: "index_scripts_on_owner_and_project_name"
     t.index ["owner_id"], name: "index_scripts_on_owner_id"
     t.check_constraint "language::text = ANY (ARRAY['basic'::character varying, 'python'::character varying]::text[])", name: "scripts_language_known"
     t.check_constraint "priority >= 1 AND priority <= 5", name: "scripts_priority_range"
@@ -114,6 +124,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_07_000002) do
     t.index ["owner_id"], name: "index_viewport_on_owner_id"
   end
 
+  add_foreign_key "project_scripts", "projects", on_delete: :cascade
+  add_foreign_key "project_scripts", "scripts", on_delete: :cascade
   add_foreign_key "projects", "users", column: "owner_id"
   add_foreign_key "scripts", "users", column: "owner_id"
   add_foreign_key "viewport", "users", column: "owner_id"

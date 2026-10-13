@@ -4,7 +4,7 @@ Rails 8 API-only app exposing JSON CRUD for these tables:
 
 | Table      | Columns                                                                 | Endpoint     |
 |------------|-------------------------------------------------------------------------|--------------|
-| `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, `shared`, `project_name`, timestamps | `/scripts` |
+| `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, `shared`, timestamps | `/scripts` |
 | `projects` | `name`, `description`, `owner_id`, timestamps                           | `/projects`  |
 | `users`    | `name` (unique), `email` (unique, optional), timestamps                 | `POST /users` |
 | `viewport` | `name:string` (unique), `content:jsonb`, timestamps                     | `/viewports` |
@@ -22,11 +22,10 @@ copied into it (those two tables are still in the database, unused, as a backup)
 | `version`    | starts at 1 and goes up by one each time `content` changes          |
 | `priority`   | 1 to 5, default 3                                                   |
 | `shared`     | `true` or `false` (default)                                         |
-| `project_name` | the name of the project the script is in (see Projects), or null  |
 | `compiled`   | compiled code, JSON text. The crumb client calls it `compiled_code`: both names are accepted when saving, and records are returned with both |
 
-`GET /scripts` takes `?name=`, `?language=`, `?owner_id=`, `?visibility=` and
-`?project_name=` filters. The body's key is `script`: `{"script":{"name":"hello","language":"basic","content":"..."}}`.
+`GET /scripts` takes `?name=`, `?language=`, `?owner_id=`, and
+`?visibility=` filters. The body's key is `script`: `{"script":{"name":"hello","language":"basic","content":"..."}}`.
 
 `/basic_sources` and `/python_sources` still answer: each is `/scripts`
 limited to one language, with the body's key `basic_source` or
@@ -70,26 +69,28 @@ string.
 
 ## Projects
 
-A project is a named group of scripts in one space, with a description. Its
-scripts are the scripts in the same space (the same owner, or none) whose
-`project_name` is the project's name, so a script is in at most one project.
-A name is unique within a space.
+A project is a named, ordered list of scripts, with a description. A name is
+unique within a space. The list is kept in `project_scripts` (`project_id`,
+`script_id`, `position`). A script can be in any number of projects, and a
+project can hold the owner's scripts, scripts that other users have shared
+(`shared` true) and scripts in the shared space.
 
 A record is `{ id, name, description, owner, scripts, created_at, updated_at }`,
-where `scripts` is `[{ "id", "name", "language" }, ...]`, by name.
+where `scripts` is `[{ "id", "name", "language", "owner", "shared" }, ...]`, in
+order.
 
 | Request | Does |
 |---|---|
 | `GET /projects` | every project; `?name=` and `?owner=` filter, as for scripts |
 | `GET /projects/:id` | one project |
 | `POST /projects` body `{"project":{"name":"...","description":"...","owner":"peter","script_ids":[1,2]}}` | creates it |
-| `PATCH /projects/:id` body `{"project":{"script_ids":[2,3]}}` | makes those its scripts, and no others |
-| `DELETE /projects/:id` | deletes it (204); its scripts stay, in no project |
+| `PATCH /projects/:id` body `{"project":{"script_ids":[3,2]}}` | makes those its scripts, in that order, and no others |
+| `DELETE /projects/:id` | deletes it (204); its scripts are kept |
 
-`script_ids` must all be scripts in the project's space. A script can also be
-put in a project, or taken out, by setting its own `project_name`. Renaming a
-project renames it in its scripts; moving one to another space leaves its
-scripts behind, in no project.
+`script_ids` must all be scripts the project's owner can use: their own,
+shared ones, or ones in the shared space. Deleting a script takes it out of
+every project. Moving a project to another space drops the scripts its new
+owner cannot use.
 
 Health check: `GET /up`
 

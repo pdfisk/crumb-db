@@ -1,8 +1,9 @@
 # JSON CRUD for projects, at /projects; the body's key is "project".
 #
-# A project is returned with its scripts ("scripts": [{ id, name, language }]).
-# "script_ids" in a body sets them: those scripts, which must be in the
-# project's space, and no others.
+# A project is returned with its scripts, in order ("scripts": [{ id, name,
+# language, owner, shared }]). "script_ids" in a body sets them: those
+# scripts in that order, and no others. They must be the project owner's, or
+# shared, or in the shared space.
 class ProjectsController < ApplicationController
   include OwnerParams
 
@@ -39,7 +40,7 @@ class ProjectsController < ApplicationController
     end
   end
 
-  # DELETE /projects/:id  (its scripts stay, in no project)
+  # DELETE /projects/:id  (its scripts stay, and stay in other projects)
   def destroy
     @record.destroy!
     head :no_content

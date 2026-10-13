@@ -7,6 +7,8 @@ class Script < ApplicationRecord
   include CompiledCodeAlias
   include Owned
 
+  has_many :project_scripts, dependent: :delete_all, inverse_of: :script
+
   LANGUAGES = %w[basic python].freeze
   VISIBILITIES = %w[public unlisted private].freeze
 
