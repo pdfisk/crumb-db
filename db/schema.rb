@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_13_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_14_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -65,6 +65,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_13_000001) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "name"
+    t.string "language"
+    t.text "content"
+    t.text "compiled"
+    t.integer "priority"
+    t.integer "version"
     t.index ["project_id", "position"], name: "index_project_scripts_on_project_id_and_position"
     t.index ["project_id", "script_id"], name: "index_project_scripts_on_project_id_and_script_id", unique: true
     t.index ["project_id"], name: "index_project_scripts_on_project_id"

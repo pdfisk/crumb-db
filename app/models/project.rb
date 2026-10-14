@@ -5,9 +5,15 @@
 # a script can be in any number of projects. Deleting a project, or a script,
 # only takes it out of the lists.
 #
+# Each project_scripts row also holds a snapshot of its script - name,
+# language, source, compiled code, priority and version - taken each time the
+# project is saved, so the project keeps the scripts as they were then.
+#
 # In JSON a project has "scripts": [{ "id", "name", "language", "owner",
 # "shared" }, ...] in order, and takes "script_ids": the scripts to be in it,
-# in order, replacing the ones that were.
+# in order, replacing the ones that were. as_json(snapshot: true) adds each
+# script's snapshot ("content", "compiled_code", "priority", "version"; its
+# "name" and "language" are those of the script when it was saved).
 class Project < ApplicationRecord
   include Owned
 
@@ -40,8 +46,11 @@ class Project < ApplicationRecord
   end
 
   def serializable_hash(options = nil)
+    snapshots = project_scripts.index_by(&:script_id) if options && options[:snapshot]
     listed = scripts.includes(:owner).map do |s|
-      { "id" => s.id, "name" => s.name, "language" => s.language, "owner" => s.owner_name, "shared" => s.shared }
+      entry = { "id" => s.id, "name" => s.name, "language" => s.language, "owner" => s.owner_name, "shared" => s.shared }
+      entry.merge!(snapshots[s.id].snapshot_hash) if snapshots && snapshots[s.id]
+      entry
     end
     super.merge("scripts" => listed)
   end
@@ -61,19 +70,29 @@ class Project < ApplicationRecord
     if @script_ids
       ids = @script_ids
       @script_ids = nil
-      rows.where.not(script_id: ids).delete_all
+      changed = rows.where.not(script_id: ids).delete_all.positive?
       have = rows.pluck(:script_id, :id, :position).to_h { |script_id, row, position| [script_id, [row, position]] }
       ids.each_with_index do |script_id, position|
         row, was = have[script_id]
         if row.nil?
           ProjectScript.create!(project_id: id, script_id: script_id, position: position)
+          changed = true
         elsif was != position
           ProjectScript.where(id: row).update_all(position: position)
+          changed = true
         end
       end
+      touch if changed && !saved_changes?   # a new list is a change, for sync to see
     elsif saved_change_to_owner_id?
       # Moved to another space: scripts its new owner cannot use drop out.
       rows.where.not(script_id: available_scripts.select(:id)).delete_all
     end
+    snapshot_scripts
+  end
+
+  # Takes a fresh snapshot of every script in the project.
+  def snapshot_scripts
+    project_scripts.reset
+    ProjectScript.where(project_id: id).includes(:script).find_each { |row| row.snapshot! }
   end
 end

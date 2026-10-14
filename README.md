@@ -71,7 +71,9 @@ string.
 
 A project is a named, ordered list of scripts, with a description. A name is
 unique within a space. The list is kept in `project_scripts` (`project_id`,
-`script_id`, `position`). A script can be in any number of projects, and a
+`script_id`, `position`), each row also holding a snapshot of its script as it
+was when the project was last saved (`name`, `language`, `content`, `compiled`,
+`priority`, `version`), so the project keeps the scripts as it ran them. A script can be in any number of projects, and a
 project can hold the owner's scripts, scripts that other users have shared
 (`shared` true) and scripts in the shared space.
 
@@ -82,15 +84,35 @@ order.
 | Request | Does |
 |---|---|
 | `GET /projects` | every project; `?name=` and `?owner=` filter, as for scripts |
-| `GET /projects/:id` | one project |
+| `GET /projects/:id` | one project, each of its `scripts` with its snapshot too: `content`, `compiled_code`, `priority`, `version` |
 | `POST /projects` body `{"project":{"name":"...","description":"...","owner":"peter","script_ids":[1,2]}}` | creates it |
-| `PATCH /projects/:id` body `{"project":{"script_ids":[3,2]}}` | makes those its scripts, in that order, and no others |
+| `PATCH /projects/:id` body `{"project":{"script_ids":[3,2]}}` | makes those its scripts, in that order, and no others; every save takes a fresh snapshot of its scripts |
 | `DELETE /projects/:id` | deletes it (204); its scripts are kept |
 
 `script_ids` must all be scripts the project's owner can use: their own,
 shared ones, or ones in the shared space. Deleting a script takes it out of
 every project. Moving a project to another space drops the scripts its new
 owner cannot use.
+
+## Synchronize the local and remote databases
+
+`../sync/sync-db.mjs` (or `../sync/sync-db.ps1`) copies scripts and projects
+between the local server and the remote one through their JSON APIs, so it
+needs no database credentials. Run `bin/rails server` first.
+
+```bash
+node ../sync/sync-db.mjs --dry-run            # list what would change
+node ../sync/sync-db.mjs                      # both ways, asking first
+node ../sync/sync-db.mjs --direction push     # local -> remote only (pull: the reverse)
+node ../sync/sync-db.mjs --prefer local       # local always wins a conflict (default: newer)
+node ../sync/sync-db.mjs --only projects --owner peter --yes
+```
+
+Records are matched by owner and name. One that only one side has is copied
+to the other; when both have it and they differ, the one updated last wins
+(or `--prefer`). A project's scripts are matched by owner and name too.
+Nothing is deleted, so a record deleted on one side returns at the next sync.
+Test it with `node --test ../sync/sync-db.test.js`.
 
 Health check: `GET /up`
 
