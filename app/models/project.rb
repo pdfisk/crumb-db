@@ -9,6 +9,8 @@
 # language, source, compiled code, priority and version - taken each time the
 # project is saved, so the project keeps the scripts as they were then.
 #
+# "shared" is true when the owner has shared the project (false by default).
+#
 # In JSON a project has "scripts": [{ "id", "name", "language", "owner",
 # "shared" }, ...] in order, and takes "script_ids": the scripts to be in it,
 # in order, replacing the ones that were. as_json(snapshot: true) adds each
@@ -23,6 +25,7 @@ class Project < ApplicationRecord
 
   # One project per name in each user's space, and in the shared one.
   validates :name, presence: true, uniqueness: { scope: :owner_id }
+  validates :shared, inclusion: { in: [true, false] }
   validate :script_ids_must_be_available
 
   after_save :store_scripts

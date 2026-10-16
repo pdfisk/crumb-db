@@ -4,7 +4,8 @@
 # language, owner, shared }]); GET /projects/:id adds each one's snapshot, taken
 # when the project was last saved (content, compiled_code, priority, version). "script_ids" in a body sets them: those
 # scripts in that order, and no others. They must be the project owner's, or
-# shared, or in the shared space.
+# shared, or in the shared space. "shared" (true or false, default false) says
+# whether the owner has shared the project.
 class ProjectsController < ApplicationController
   include OwnerParams
 
@@ -55,7 +56,7 @@ class ProjectsController < ApplicationController
 
   def record_params
     body = params.require(:project)
-    attrs = body.permit(:name, :description, script_ids: [])
+    attrs = body.permit(:name, :description, :shared, script_ids: [])
     # An empty list is a list: it takes every script out of the project.
     attrs[:script_ids] = [] if body.key?(:script_ids) && body[:script_ids].blank?
     with_owner(attrs, body)

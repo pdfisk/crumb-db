@@ -5,7 +5,7 @@ Rails 8 API-only app exposing JSON CRUD for these tables:
 | Table      | Columns                                                                 | Endpoint     |
 |------------|-------------------------------------------------------------------------|--------------|
 | `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, `shared`, timestamps | `/scripts` |
-| `projects` | `name`, `description`, `owner_id`, timestamps                           | `/projects`  |
+| `projects` | `name`, `description`, `owner_id`, `shared`, timestamps                 | `/projects`  |
 | `users`    | `name` (unique), `email` (unique, optional), timestamps                 | `POST /users` |
 | `viewport` | `name:string` (unique), `content:jsonb`, timestamps                     | `/viewports` |
 
@@ -77,15 +77,15 @@ was when the project was last saved (`name`, `language`, `content`, `compiled`,
 project can hold the owner's scripts, scripts that other users have shared
 (`shared` true) and scripts in the shared space.
 
-A record is `{ id, name, description, owner, scripts, created_at, updated_at }`,
-where `scripts` is `[{ "id", "name", "language", "owner", "shared" }, ...]`, in
+A record is `{ id, name, description, owner, shared, scripts, created_at, updated_at }`,
+where `shared` is `true` when the owner has shared the project and `false` (the default) if not, and `scripts` is `[{ "id", "name", "language", "owner", "shared" }, ...]`, in
 order.
 
 | Request | Does |
 |---|---|
 | `GET /projects` | every project; `?name=` and `?owner=` filter, as for scripts |
 | `GET /projects/:id` | one project, each of its `scripts` with its snapshot too: `content`, `compiled_code`, `priority`, `version` |
-| `POST /projects` body `{"project":{"name":"...","description":"...","owner":"peter","script_ids":[1,2]}}` | creates it |
+| `POST /projects` body `{"project":{"name":"...","description":"...","owner":"peter","shared":false,"script_ids":[1,2]}}` | creates it |
 | `PATCH /projects/:id` body `{"project":{"script_ids":[3,2]}}` | makes those its scripts, in that order, and no others; every save takes a fresh snapshot of its scripts |
 | `DELETE /projects/:id` | deletes it (204); its scripts are kept |
 
