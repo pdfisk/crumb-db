@@ -6,7 +6,8 @@ Rails 8 API-only app exposing JSON CRUD for these tables:
 |------------|-------------------------------------------------------------------------|--------------|
 | `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, `shared`, timestamps | `/scripts` |
 | `projects` | `name`, `description`, `owner_id`, `shared`, timestamps                 | `/projects`  |
-| `users`    | `name` (unique), `email` (unique, optional), timestamps                 | `POST /users` |
+| `users`    | `name` (unique), `email` (unique, optional), `password_digest`, timestamps | `POST /users`, `/session` |
+| `api_tokens` | `user_id`, `token_digest`, `expires_at`, `last_used_at`               | (sign-in tokens) |
 | `viewport` | `name:string` (unique), `content:jsonb`, timestamps                     | `/viewports` |
 
 `scripts` holds every program, whatever its language. The table was called
@@ -52,20 +53,49 @@ Records are returned with `"owner"`: the user's name, or `null` when shared.
 `/viewports` takes `owner` the same way. User names match whatever their
 case.
 
-`POST /users` registers a user: body `{"user":{"name":"peter","email":"..."}}`
-(the e-mail is optional). It answers 201 with `id`, `name`, `email` and
-`created_at`, or 422 with the errors, e.g. a name already taken. There is no
-`GET /users/:name` answers the registered user (`id`, `name`; the name
-matches whatever its case) or 404, which is how a client checks that a
-name is registered before signing in. There are no credentials yet. Until there is sign-in,
-naming an owner who does not exist creates that user, and nothing checks
-who is asking or an app's `visibility`: any client can still read and
-change any record in any space.
+`POST /users` registers a user: body `{"user":{"name":"peter","password":"...","email":"..."}}`
+(the e-mail is optional; the password is 8 to 72 characters). It answers 201 with `id`,
+`name`, `email`, `created_at` and a sign-in `token`, or 422 with the errors, e.g. a name
+already taken. `GET /users/:name` answers the registered user (`id`, `name`; the name
+matches whatever its case) or 404, which is how a client checks whether a name is taken.
+See **Sign-in and permissions** below.
 
 `viewport` holds saved FastBlip screens: the JSON a program's Viewport writes
 (`vp.save("name")` / `vp.load("name")`). `content` must be a JSON object with
 `"format": "fastblip-viewport"`; it is sent and returned as an object, not a
 string.
+
+## Sign-in and permissions
+
+`POST /session` body `{"session":{"name":"peter","password":"..."}}` answers 201 with
+`{"token": "...", "user": {"id", "name", "admin"}}`, or 401 `wrong name or password` (the
+same answer whether the name or the password is wrong). A client sends the token with every
+request as `Authorization: Bearer <token>`. `GET /session` says who the token belongs to;
+`DELETE /session` signs out (204). Tokens last 30 days; only a SHA-256 digest of each is
+stored. A request with no `Authorization` header is anonymous; one with a token that is
+unknown, expired or signed out gets 401 whatever it asks, so a client knows to sign in again.
+Signing in and registering are limited to ten tries in three minutes from one address
+(this counts in `Rails.cache`, so it is per server process).
+
+| | Anonymous | Signed in | The owner |
+|---|---|---|---|
+| Read a **script** | public; unlisted by `?owner=&name=` or by id | the same | also private |
+| Read a **project** | shared ones, and ones in the shared space | the same | also unshared |
+| Read a **screen/composite** | all | all | all |
+| Create | no (401) | in your own space; a body with no `owner` means you | |
+| Change or delete | no (401) | no (403) | yes |
+
+- A body's `"owner"` may only be your own name (case does not matter), or `""` for the shared
+  space if you are an administrator; anything else is 403. An unknown name no longer creates
+  that user. `owner_id` in a script body is ignored.
+- Records you may not see are answered 404, as if they did not exist, including for PATCH and DELETE.
+- The **shared space** (records with no owner) can be read by anyone but changed only by
+  administrators: set the `ADMIN_USERS` config var to a comma-separated list of user names.
+- Users from before sign-in have no password and cannot sign in until you set one:
+  `bin/rails "users:set_password[peter]"` (it asks twice and signs them out everywhere);
+  `bin/rails users:without_password` lists them.
+- Clients (the IDE's database client, sign-in window and `sync-db`) must now send the token to
+  write anything. Until they do, writes get 401.
 
 ## Projects
 
@@ -127,7 +157,16 @@ copy .env.example .env     # then set DATABASE_URL in .env
 bin/rails db:create      # skip if cobol_studio already exists
 bin/rails db:migrate
 bin/rails db:seed        # optional sample rows
+bin/rails "users:set_password[peter]"   # for users that existed before sign-in
 bin/rails server         # http://localhost:3000
+```
+
+Tests (the test database is `TEST_DATABASE_URL`, default
+`postgres://admin@localhost:5432/cobol_studio_test`; Rails creates and loads it from `db/schema.rb`):
+
+```bash
+RAILS_ENV=test bin/rails db:create
+bin/rails test
 ```
 
 To point your local app at the remote database, change `DATABASE_URL` in `.env` to the Heroku URL (`heroku config:get DATABASE_URL`).
@@ -147,7 +186,8 @@ heroku addons:create heroku-postgresql:essential-0   # skip if the app already h
 git push heroku main              # Procfile release phase runs db:migrate
 ```
 
-Heroku sets `DATABASE_URL` and `SECRET_KEY_BASE` automatically. Optional config vars:
+Heroku sets `DATABASE_URL` and `SECRET_KEY_BASE` automatically. Set `ADMIN_USERS` (see
+Sign-in and permissions) to the names allowed to change the shared space. Optional config vars:
 `CORS_ORIGINS` (comma-separated, default `*`), `RAILS_MAX_THREADS`, `WEB_CONCURRENCY`, `RAILS_LOG_LEVEL`.
 
 Migrations use `if_not_exists`, so they're safe on a database where the tables already exist.

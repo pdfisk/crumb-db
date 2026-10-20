@@ -10,12 +10,16 @@
 class ScriptsController < ApplicationController
   include OwnerParams
 
+  before_action :require_login!, only: %i[create update destroy]
   before_action :set_record, only: %i[show update destroy]
+  before_action :authorize_modify!, only: %i[update destroy]
 
   # GET /scripts  (optional ?name= ?owner= ?language= ?owner_id= ?visibility=
-  # filters)
+  # filters). Public scripts and the caller's own; unlisted ones too when the
+  # request names both an owner and a name.
   def index
-    records = in_space(scripts).order(:id)
+    exact = params[:owner].present? && params[:name].present?
+    records = in_space(scripts.listed_for(current_user, include_unlisted: exact)).order(:id)
     records = records.where(name: params[:name]) if params[:name].present?
     unless fixed_language
       %i[language owner_id visibility].each do |field|
@@ -66,8 +70,10 @@ class ScriptsController < ApplicationController
     fixed_language ? Script.where(language: fixed_language) : Script.all
   end
 
+  # A script the caller may not see is not found, whatever is asked of it.
   def set_record
     @record = scripts.find(params[:id])
+    raise ActiveRecord::RecordNotFound, "Couldn't find Script with 'id'=#{params[:id]}" unless @record.visible_to?(current_user)
   end
 
   def record_params
@@ -78,7 +84,7 @@ class ScriptsController < ApplicationController
     else
       body = params.require(:script)
       attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code,
-                          :language, :owner_id, :visibility, :version,
+                          :language, :visibility, :version,
                           :shared)
     end
     with_owner(attrs, body)

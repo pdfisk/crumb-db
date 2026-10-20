@@ -2,10 +2,12 @@
 #
 #   ?owner=peter   the records in that user's space
 #   ?owner=        the records in the shared space (no owner)
-#   no owner       every record
+#   no owner       every record the caller may see
 #
 # In a body, "owner": "peter" puts the record in that user's space and
-# "owner": "" in the shared one.
+# "owner": "" in the shared one. Only the signed-in user's own name is allowed
+# (and "" for an administrator); a body with no owner puts a new record in the
+# signed-in user's space. Needs Authentication (require_login! first).
 module OwnerParams
   private
 
@@ -14,9 +16,18 @@ module OwnerParams
     params.key?(:owner) ? records.owned_by(params[:owner]) : records
   end
 
-  # Moves a body's "owner" (a user name) into attrs as owner_name.
+  # Moves a body's "owner" (a user name) into attrs as owner_name, after
+  # checking that the caller may put records there.
   def with_owner(attrs, body)
-    attrs[:owner_name] = body[:owner] if body.key?(:owner)
+    if body.key?(:owner)
+      name = body[:owner].to_s.strip
+      allowed = name.empty? ? current_user.admin? : name.casecmp?(current_user.name)
+      raise Authentication::Forbidden, "you can only put records in your own space" unless allowed
+
+      attrs[:owner_name] = name
+    elsif action_name == "create"
+      attrs[:owner_name] = current_user.name
+    end
     attrs
   end
 end

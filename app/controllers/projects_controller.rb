@@ -9,11 +9,14 @@
 class ProjectsController < ApplicationController
   include OwnerParams
 
+  before_action :require_login!, only: %i[create update destroy]
   before_action :set_record, only: %i[show update destroy]
+  before_action :authorize_modify!, only: %i[update destroy]
 
-  # GET /projects  (optional ?name= ?owner= filters)
+  # GET /projects  (optional ?name= ?owner= filters). Shared projects, ones in
+  # the shared space and the caller's own.
   def index
-    records = in_space(Project.all).order(:id)
+    records = in_space(Project.visible_to(current_user)).order(:id)
     records = records.where(name: params[:name]) if params[:name].present?
     render json: records
   end
@@ -50,8 +53,10 @@ class ProjectsController < ApplicationController
 
   private
 
+  # A project the caller may not see is not found, whatever is asked of it.
   def set_record
     @record = Project.find(params[:id])
+    raise ActiveRecord::RecordNotFound, "Couldn't find Project with 'id'=#{params[:id]}" unless @record.visible_to?(current_user)
   end
 
   def record_params

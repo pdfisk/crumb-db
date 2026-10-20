@@ -11,4 +11,5 @@ Rails.application.routes.draw do
   resources :viewports
   resources :projects
   resources :users, only: %i[create show]
+  resource :session, only: %i[show create destroy]
 end

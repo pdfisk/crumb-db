@@ -6,6 +6,9 @@ gem "rails", "~> 8.0.2"
 gem "pg", "~> 1.5"
 gem "puma", ">= 6.0"
 gem "rack-cors"
+
+# Passwords: has_secure_password stores a bcrypt digest.
+gem "bcrypt", "~> 3.1"
 gem "bootsnap", require: false
 
 # Windows does not include zoneinfo files

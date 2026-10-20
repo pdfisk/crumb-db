@@ -30,6 +30,21 @@ class Project < ApplicationRecord
 
   after_save :store_scripts
 
+  # The projects this user may see: shared ones, ones in the shared space and
+  # their own (all of them, for an administrator).
+  scope :visible_to, lambda { |user|
+    if user&.admin?
+      all
+    else
+      found = where(shared: true).or(where(owner_id: nil))
+      user ? found.or(where(owner_id: user.id)) : found
+    end
+  }
+
+  def visible_to?(user)
+    shared? || owner_id.nil? || (!user.nil? && (owner_id == user.id || user.admin?))
+  end
+
   # The project's scripts, in order.
   def scripts
     Script.joins(:project_scripts).where(project_scripts: { project_id: id })

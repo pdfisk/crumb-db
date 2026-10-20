@@ -10,9 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_15_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_20_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "api_tokens", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token_digest", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "last_used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["token_digest"], name: "index_api_tokens_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_api_tokens_on_user_id"
+  end
 
   create_table "cobol_models", force: :cascade do |t|
     t.text "file_name", null: false
@@ -116,6 +127,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_000001) do
     t.string "email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "password_digest"
     t.index "lower((email)::text)", name: "index_users_on_lower_email", unique: true
     t.index "lower((name)::text)", name: "index_users_on_lower_name", unique: true
   end
@@ -131,6 +143,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_15_000001) do
     t.index ["owner_id"], name: "index_viewport_on_owner_id"
   end
 
+  add_foreign_key "api_tokens", "users", on_delete: :cascade
   add_foreign_key "project_scripts", "projects", on_delete: :cascade
   add_foreign_key "project_scripts", "scripts", on_delete: :cascade
   add_foreign_key "projects", "users", column: "owner_id"

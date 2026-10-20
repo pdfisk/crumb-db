@@ -1,7 +1,12 @@
 class ViewportsController < ApplicationController
   include OwnerParams
 
+  before_action :require_login!, only: %i[create update destroy]
   before_action :set_record, only: %i[show update destroy]
+  before_action :authorize_modify!, only: %i[update destroy]
+
+  # Screens and composites are readable by anyone (they are what an app is
+  # built from); only their owner can change them.
 
   # GET /viewports  (optional ?name= ?owner= filters)
   def index
