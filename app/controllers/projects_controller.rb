@@ -1,11 +1,11 @@
 # JSON CRUD for projects, at /projects; the body's key is "project".
 #
-# A project is returned with its scripts, in order ("scripts": [{ id, name,
-# language, owner, shared }]); GET /projects/:id adds each one's snapshot, taken
-# when the project was last saved (content, compiled_code, priority, version). "script_ids" in a body sets them: those
-# scripts in that order, and no others. They must be the project owner's, or
-# shared, or in the shared space. "shared" (true or false, default false) says
-# whether the owner has shared the project.
+# A project is returned with "scripts": a list of "<owner>/<name>" strings, in
+# order ("/name" is a script in the shared space), kept in the project's own
+# record; there are no foreign keys, so a name may be of a script that has
+# gone. "scripts" in a body sets the list: those, in that order, and no others.
+# They must be the project owner's, or in the shared space. "shared" (true or
+# false, default false) says whether the owner has shared the project.
 class ProjectsController < ApplicationController
   include OwnerParams
 
@@ -21,9 +21,9 @@ class ProjectsController < ApplicationController
     render json: records
   end
 
-  # GET /projects/:id  (with each script's snapshot: source, compiled code, priority, version)
+  # GET /projects/:id
   def show
-    render json: @record.as_json(snapshot: true)
+    render json: @record
   end
 
   # POST /projects
@@ -61,9 +61,9 @@ class ProjectsController < ApplicationController
 
   def record_params
     body = params.require(:project)
-    attrs = body.permit(:name, :description, :shared, script_ids: [])
+    attrs = body.permit(:name, :description, :shared, scripts: [])
     # An empty list is a list: it takes every script out of the project.
-    attrs[:script_ids] = [] if body.key?(:script_ids) && body[:script_ids].blank?
+    attrs[:scripts] = [] if body.key?(:scripts) && body[:scripts].blank?
     with_owner(attrs, body)
   end
 end

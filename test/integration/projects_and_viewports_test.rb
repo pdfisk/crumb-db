@@ -49,10 +49,18 @@ class ProjectsAndViewportsTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "a project can hold only scripts its owner may use" do
-    theirs = make_script(@alice, "alices-private")
-    post "/projects", params: { project: { name: "grab", script_ids: [ theirs.id ] } }, headers: bearer(@bob), as: :json
+  test "a project can list only scripts its owner may use" do
+    post "/projects", params: { project: { name: "grab", scripts: [ "alice/alices-private" ] } }, headers: bearer(@bob), as: :json
     assert_response :unprocessable_entity
+    post "/projects", params: { project: { name: "junk", scripts: [ "no-slash" ] } }, headers: bearer(@bob), as: :json
+    assert_response :unprocessable_entity
+
+    post "/projects", params: { project: { name: "mine", scripts: [ "bob/b", "/common", "bob/b" ] } }, headers: bearer(@bob), as: :json
+    assert_response :created
+    assert_equal [ "bob/b", "/common" ], response.parsed_body["scripts"], "in order, without repeats; a script need not exist"
+    id = response.parsed_body["id"]
+    patch "/projects/#{id}", params: { project: { scripts: [] } }, headers: bearer(@bob), as: :json
+    assert_equal [], response.parsed_body["scripts"]
   end
 
   test "screens are readable by anyone and changeable only by their owner" do

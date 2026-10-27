@@ -12,6 +12,11 @@
 # Reading follows each record's visibility (see the models' visible_to?);
 # changing needs a signed-in user who owns the record. Records in the shared
 # space (no owner) can be changed only by administrators (User#admin?).
+#
+# Local trust: a development server asked from this machine needs no sign-in.
+# A request with no valid token is then treated as the local user, who may read
+# and change anything (see local_trust?). It never applies in production or to
+# requests from another address; set LOCAL_REQUIRE_LOGIN=1 to turn it off.
 module Authentication
   extend ActiveSupport::Concern
 
@@ -36,6 +41,8 @@ module Authentication
   # Finds the user from the Authorization header, if there is one.
   def authenticate
     header = request.authorization.to_s
+    return use_local_user if header.empty? && local_trust?
+
     return if header.empty?
 
     token = header[/\ABearer\s+(\S+)\z/i, 1]
@@ -43,9 +50,26 @@ module Authentication
     if @current_token
       @current_user = @current_token.user
       stamp_token
+    elsif local_trust?
+      use_local_user   # a stale token from an earlier sign-in does not matter here
     else
       render json: { error: "the token is not valid or has expired: sign in again" }, status: :unauthorized
     end
+  end
+
+  # Whether this request is trusted without signing in: the server is in
+  # development, the request comes from this machine and local trust has not
+  # been switched off (config.x.local_trust, i.e. LOCAL_REQUIRE_LOGIN=1).
+  def local_trust?
+    Rails.configuration.x.local_trust == true && request.local?
+  end
+
+  def local_trust_user?
+    current_user.is_a?(LocalUser)
+  end
+
+  def use_local_user
+    @current_user = LocalUser.instance
   end
 
   # last_used_at, at most every five minutes, so reads do not write.
@@ -63,6 +87,7 @@ module Authentication
   # shared space and they are an administrator.
   def can_modify?(record)
     return false unless current_user
+    return true if local_trust_user?
 
     record.owner_id ? record.owner_id == current_user.id : current_user.admin?
   end

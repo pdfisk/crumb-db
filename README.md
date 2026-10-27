@@ -4,8 +4,8 @@ Rails 8 API-only app exposing JSON CRUD for these tables:
 
 | Table      | Columns                                                                 | Endpoint     |
 |------------|-------------------------------------------------------------------------|--------------|
-| `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, `shared`, timestamps | `/scripts` |
-| `projects` | `name`, `description`, `owner_id`, `shared`, timestamps                 | `/projects`  |
+| `scripts`  | `name`, `content`, `language`, `owner_id`, `visibility`, `version`, `priority`, `compiled`, timestamps | `/scripts` |
+| `projects` | `name`, `description`, `owner_id`, `shared`, `scripts`, timestamps               | `/projects`  |
 | `users`    | `name` (unique), `email` (unique, optional), `password_digest`, timestamps | `POST /users`, `/session` |
 | `api_tokens` | `user_id`, `token_digest`, `expires_at`, `last_used_at`               | (sign-in tokens) |
 | `viewport` | `name:string` (unique), `content:jsonb`, timestamps                     | `/viewports` |
@@ -22,7 +22,6 @@ copied into it (those two tables are still in the database, unused, as a backup)
 | `visibility` | `public` (default), `unlisted` or `private`                         |
 | `version`    | starts at 1 and goes up by one each time `content` changes          |
 | `priority`   | 1 to 5, default 3                                                   |
-| `shared`     | `true` or `false` (default)                                         |
 | `compiled`   | compiled code, JSON text. The crumb client calls it `compiled_code`: both names are accepted when saving, and records are returned with both |
 
 `GET /scripts` takes `?name=`, `?language=`, `?owner_id=`, and
@@ -94,35 +93,40 @@ Signing in and registering are limited to ten tries in three minutes from one ad
 - Users from before sign-in have no password and cannot sign in until you set one:
   `bin/rails "users:set_password[peter]"` (it asks twice and signs them out everywhere);
   `bin/rails users:without_password` lists them.
+- **Local server, no sign-in.** In development (`bin/rails server`), a request from this machine
+  with no token (or a stale one) is treated as a local user who can read and change anything, so
+  the IDE works against `?db=local` without signing in. A name used as `owner` gets a space on first use.
+  It never applies in production or to requests from another address. Set `LOCAL_REQUIRE_LOGIN=1` in
+  `.env` to test the real sign-in flow locally.
+
 - Clients (the IDE's database client, sign-in window and `sync-db`) must now send the token to
   write anything. Until they do, writes get 401.
 
 ## Projects
 
 A project is a named, ordered list of scripts, with a description. A name is
-unique within a space. The list is kept in `project_scripts` (`project_id`,
-`script_id`, `position`), each row also holding a snapshot of its script as it
-was when the project was last saved (`name`, `language`, `content`, `compiled`,
-`priority`, `version`), so the project keeps the scripts as it ran them. A script can be in any number of projects, and a
-project can hold the owner's scripts, scripts that other users have shared
-(`shared` true) and scripts in the shared space.
+unique within a space. The list is the project's `scripts` column: a text column holding JSON (`"[]"` by default), a list
+of `"<owner>/<name>"` strings in order (`"peter/snake"`; an empty owner,
+`"/snake"`, is a script in the shared space). There are no foreign keys between
+projects and scripts: a script can be in any number of projects, and deleting or
+renaming one leaves its name in the lists that have it (clients report it as
+missing). A project can list the owner's scripts and scripts in the shared
+space. (Sharing is a property of the project, not of a script.)
 
 A record is `{ id, name, description, owner, shared, scripts, created_at, updated_at }`,
-where `shared` is `true` when the owner has shared the project and `false` (the default) if not, and `scripts` is `[{ "id", "name", "language", "owner", "shared" }, ...]`, in
+where `shared` is `true` when the owner has shared the project and `false` (the default) if not, and `scripts` is `["peter/snake", ...]`, in
 order.
 
 | Request | Does |
 |---|---|
 | `GET /projects` | every project; `?name=` and `?owner=` filter, as for scripts |
-| `GET /projects/:id` | one project, each of its `scripts` with its snapshot too: `content`, `compiled_code`, `priority`, `version` |
-| `POST /projects` body `{"project":{"name":"...","description":"...","owner":"peter","shared":false,"script_ids":[1,2]}}` | creates it |
-| `PATCH /projects/:id` body `{"project":{"script_ids":[3,2]}}` | makes those its scripts, in that order, and no others; every save takes a fresh snapshot of its scripts |
+| `GET /projects/:id` | one project |
+| `POST /projects` body `{"project":{"name":"...","description":"...","owner":"peter","shared":false,"scripts":["peter/a","/b"]}}` | creates it |
+| `PATCH /projects/:id` body `{"project":{"scripts":["peter/b","peter/a"]}}` | makes those its scripts, in that order, and no others |
 | `DELETE /projects/:id` | deletes it (204); its scripts are kept |
 
-`script_ids` must all be scripts the project's owner can use: their own,
-shared ones, or ones in the shared space. Deleting a script takes it out of
-every project. Moving a project to another space drops the scripts its new
-owner cannot use.
+Each `scripts` entry must be one of the project owner's scripts or one in the
+shared space (the script need not exist yet).
 
 ## Synchronize the local and remote databases
 

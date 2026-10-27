@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_10_20_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_10_27_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -25,69 +25,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_20_000001) do
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
   end
 
-  create_table "cobol_models", force: :cascade do |t|
-    t.text "file_name", null: false
-    t.text "content", default: "", null: false
-    t.timestamptz "created_at", default: -> { "now()" }, null: false
-    t.timestamptz "updated_at", default: -> { "now()" }, null: false
-
-    t.unique_constraint ["file_name"], name: "cobol_models_file_name_key"
-  end
-
-  create_table "cobol_source_files", id: :serial, force: :cascade do |t|
-    t.string "file_name", limit: 512, null: false
-    t.text "content", null: false
-    t.timestamptz "created_at", default: -> { "CURRENT_TIMESTAMP" }
-    t.timestamptz "updated_at", default: -> { "CURRENT_TIMESTAMP" }
-
-    t.unique_constraint ["file_name"], name: "cobol_source_files_file_name_key"
-  end
-
-  create_table "data_models", id: :bigint, default: nil, force: :cascade do |t|
-    t.text "file_name", null: false
-    t.text "content", default: "", null: false
-    t.timestamptz "created_at", default: -> { "now()" }, null: false
-    t.timestamptz "updated_at", default: -> { "now()" }, null: false
-
-    t.unique_constraint ["file_name"], name: "data_models_file_name_key"
-  end
-
-  create_table "jcl_models", id: :bigint, default: nil, force: :cascade do |t|
-    t.text "file_name", null: false
-    t.text "content", default: "", null: false
-    t.timestamptz "created_at", default: -> { "now()" }, null: false
-    t.timestamptz "updated_at", default: -> { "now()" }, null: false
-
-    t.unique_constraint ["file_name"], name: "jcl_models_file_name_key"
-  end
-
-  create_table "jcl_source_files", id: :serial, force: :cascade do |t|
-    t.string "file_name", limit: 512, null: false
-    t.text "content", null: false
-    t.timestamptz "created_at", default: -> { "CURRENT_TIMESTAMP" }
-    t.timestamptz "updated_at", default: -> { "CURRENT_TIMESTAMP" }
-
-    t.unique_constraint ["file_name"], name: "jcl_source_files_file_name_key"
-  end
-
-  create_table "project_scripts", force: :cascade do |t|
-    t.bigint "project_id", null: false
-    t.bigint "script_id", null: false
-    t.integer "position", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "name"
-    t.string "language"
-    t.text "content"
-    t.text "compiled"
-    t.integer "priority"
-    t.integer "version"
-    t.index ["project_id", "position"], name: "index_project_scripts_on_project_id_and_position"
-    t.index ["project_id", "script_id"], name: "index_project_scripts_on_project_id_and_script_id", unique: true
-    t.index ["project_id"], name: "index_project_scripts_on_project_id"
-    t.index ["script_id"], name: "index_project_scripts_on_script_id"
-  end
-
   create_table "projects", force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -95,6 +32,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_20_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "shared", default: false, null: false
+    t.text "scripts", default: "[]", null: false
     t.index ["name"], name: "index_projects_on_name_shared", unique: true, where: "(owner_id IS NULL)"
     t.index ["owner_id", "name"], name: "index_projects_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"
     t.index ["owner_id"], name: "index_projects_on_owner_id"
@@ -111,7 +49,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_20_000001) do
     t.text "compiled"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.boolean "shared", default: false, null: false
     t.index ["language", "name"], name: "index_scripts_on_language_and_name"
     t.index ["name"], name: "index_scripts_on_name"
     t.index ["owner_id", "name"], name: "index_scripts_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"
@@ -144,8 +81,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_10_20_000001) do
   end
 
   add_foreign_key "api_tokens", "users", on_delete: :cascade
-  add_foreign_key "project_scripts", "projects", on_delete: :cascade
-  add_foreign_key "project_scripts", "scripts", on_delete: :cascade
   add_foreign_key "projects", "users", column: "owner_id"
   add_foreign_key "scripts", "users", column: "owner_id"
   add_foreign_key "viewport", "users", column: "owner_id"

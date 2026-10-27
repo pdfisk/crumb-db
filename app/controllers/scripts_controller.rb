@@ -79,13 +79,11 @@ class ScriptsController < ApplicationController
   def record_params
     if fixed_language
       body = params.require(:"#{fixed_language}_source")
-      attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code,
-                          :shared)
+      attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code)
     else
       body = params.require(:script)
       attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code,
-                          :language, :visibility, :version,
-                          :shared)
+                          :language, :visibility, :version)
     end
     with_owner(attrs, body)
   end

@@ -22,12 +22,23 @@ module OwnerParams
     if body.key?(:owner)
       name = body[:owner].to_s.strip
       allowed = name.empty? ? current_user.admin? : name.casecmp?(current_user.name)
+      allowed ||= local_trust_user?
       raise Authentication::Forbidden, "you can only put records in your own space" unless allowed
 
       attrs[:owner_name] = name
+      ensure_local_owner(name) if local_trust_user?
     elsif action_name == "create"
-      attrs[:owner_name] = current_user.name
+      attrs[:owner_name] = local_trust_user? ? "" : current_user.name
     end
     attrs
+  end
+
+  # On a locally trusted server a space for a new name is made on first use, as
+  # it was before sign-in existed. Its password is random: set one with
+  # bin/rails "users:set_password[name]" if you ever want to sign in as it.
+  def ensure_local_owner(name)
+    return if name.empty? || User.exists?(["lower(name) = ?", name.downcase])
+
+    User.create(name: name, password: SecureRandom.hex(16))
   end
 end

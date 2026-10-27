@@ -38,6 +38,8 @@ class SessionsController < ApplicationController
   private
 
   def user_json(user)
+    return user.as_json if user.is_a?(LocalUser)
+
     user.as_json(only: %i[id name]).merge("admin" => user.admin?)
   end
 end

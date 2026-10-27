@@ -7,8 +7,6 @@ class Script < ApplicationRecord
   include CompiledCodeAlias
   include Owned
 
-  has_many :project_scripts, dependent: :delete_all, inverse_of: :script
-
   LANGUAGES = %w[basic python].freeze
   VISIBILITIES = %w[public unlisted private].freeze
 
@@ -21,7 +19,6 @@ class Script < ApplicationRecord
   validates :visibility, inclusion: { in: VISIBILITIES }
   validates :version, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validates :priority, numericality: { only_integer: true, in: 1..5 }
-  validates :shared, inclusion: { in: [true, false] }
   validate :compiled_code_must_be_valid_json
 
   # Each change to the source is a new version, unless the save sets one.
