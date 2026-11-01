@@ -1,11 +1,10 @@
 # JSON CRUD for projects, at /projects; the body's key is "project".
 #
-# A project is returned with "scripts": a list of "<owner>/<name>" strings, in
-# order ("/name" is a script in the shared space), kept in the project's own
-# record; there are no foreign keys, so a name may be of a script that has
-# gone. "scripts" in a body sets the list: those, in that order, and no others.
-# They must be the project owner's, or in the shared space. "shared" (true or
-# false, default false) says whether the owner has shared the project.
+# A project is returned with "scripts": the project's own copies of its
+# scripts, in order, each { name, language, content, priority?, compiled_code? }
+# (see Project). "scripts" in a body sets the list: those, in that order, and
+# no others. Names must be unique within the project, ignoring case. "shared"
+# (true or false, default false) says whether the owner has shared the project.
 class ProjectsController < ApplicationController
   include OwnerParams
 
@@ -45,7 +44,7 @@ class ProjectsController < ApplicationController
     end
   end
 
-  # DELETE /projects/:id  (its scripts stay, and stay in other projects)
+  # DELETE /projects/:id  (its scripts go with it; the scripts table is untouched)
   def destroy
     @record.destroy!
     head :no_content
@@ -61,7 +60,7 @@ class ProjectsController < ApplicationController
 
   def record_params
     body = params.require(:project)
-    attrs = body.permit(:name, :description, :shared, scripts: [])
+    attrs = body.permit(:name, :description, :shared, scripts: %i[name language content priority compiled_code])
     # An empty list is a list: it takes every script out of the project.
     attrs[:scripts] = [] if body.key?(:scripts) && body[:scripts].blank?
     with_owner(attrs, body)

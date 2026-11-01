@@ -49,18 +49,42 @@ class ProjectsAndViewportsTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "a project can list only scripts its owner may use" do
-    post "/projects", params: { project: { name: "grab", scripts: [ "alice/alices-private" ] } }, headers: bearer(@bob), as: :json
-    assert_response :unprocessable_entity
-    post "/projects", params: { project: { name: "junk", scripts: [ "no-slash" ] } }, headers: bearer(@bob), as: :json
-    assert_response :unprocessable_entity
-
-    post "/projects", params: { project: { name: "mine", scripts: [ "bob/b", "/common", "bob/b" ] } }, headers: bearer(@bob), as: :json
+  test "a project keeps its own copies of its scripts' source" do
+    ball = { name: "Ball", language: "python", content: "print(1)", priority: 3, compiled_code: "{}" }
+    paddle = { name: "Paddle", language: "python", content: "print(2)" }
+    post "/projects", params: { project: { name: "mine", scripts: [ paddle, ball ] } }, headers: bearer(@bob), as: :json
     assert_response :created
-    assert_equal [ "bob/b", "/common" ], response.parsed_body["scripts"], "in order, without repeats; a script need not exist"
+    assert_equal [
+      { "name" => "Paddle", "language" => "python", "content" => "print(2)" },
+      { "name" => "Ball", "language" => "python", "content" => "print(1)", "priority" => 3, "compiled_code" => "{}" },
+    ], response.parsed_body["scripts"], "in order, as sent"
     id = response.parsed_body["id"]
+
+    patch "/projects/#{id}", params: { project: { scripts: [ paddle.merge(content: "print(3)") ] } }, headers: bearer(@bob), as: :json
+    assert_response :success
+    assert_equal [ "print(3)" ], response.parsed_body["scripts"].map { |s| s["content"] }
     patch "/projects/#{id}", params: { project: { scripts: [] } }, headers: bearer(@bob), as: :json
     assert_equal [], response.parsed_body["scripts"]
+  end
+
+  test "a project's scripts need a name, a known language and names of their own" do
+    bad = [
+      [ { language: "python", content: "x" } ],
+      [ { name: "a", language: "cobol", content: "x" } ],
+      [ { name: "a", language: "python", content: "x" }, { name: "A", language: "python", content: "y" } ],
+      [ { name: "a", language: "python", content: "x", priority: 9 } ],
+      [ { name: "a", language: "python", content: "x", compiled_code: "not json" } ],
+      [ "bob/b" ],
+    ]
+    bad.each_with_index do |scripts, i|
+      post "/projects", params: { project: { name: "bad#{i}", scripts: scripts } }, headers: bearer(@bob), as: :json
+      assert_response :unprocessable_entity, scripts.inspect
+    end
+  end
+
+  test "the copy made for a project is the script record as it is" do
+    script = Script.create!(name: "Ball", language: "python", content: "print(1)", priority: 2, owner: @bob)
+    assert_equal({ "name" => "Ball", "language" => "python", "content" => "print(1)", "priority" => 2 }, Project.script_copy(script))
   end
 
   test "screens are readable by anyone and changeable only by their owner" do

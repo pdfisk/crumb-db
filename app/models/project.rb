@@ -1,16 +1,22 @@
 # A project: a named, ordered list of scripts, with a description.
 #
 # The scripts are kept in the project's own record, as `scripts`: a JSON list
-# of "<owner>/<name>" strings, in order ("peter/snake"; an empty owner, "/snake",
-# is a script in the shared space). There are no foreign keys: a script can be
-# in any number of projects, and deleting or renaming a script leaves its name
-# in the lists that have it, for the client to report as missing.
+# of the scripts themselves, in order, each
 #
-# A project can list only the owner's scripts and those in the shared space.
+#   { "name" => "Ball", "language" => "python", "content" => "print(1)",
+#     "priority" => 3, "compiled_code" => "{...}" }
+#
+# where priority and compiled_code may be left out. Each is the project's own
+# copy of a script's source: adding a script to a project copies it in, and
+# changing it in the project leaves any record in the scripts table as it was
+# (and the other way round). Names are unique within a project, ignoring case.
 #
 # "shared" is true when the owner has shared the project (false by default).
 class Project < ApplicationRecord
   include Owned
+
+  # The fields a project's script may have; anything else is dropped.
+  SCRIPT_FIELDS = %w[name language content priority compiled_code].freeze
 
   # Kept as JSON text in a text column ("[]" by default).
   serialize :scripts, type: Array, coder: JSON
@@ -38,34 +44,59 @@ class Project < ApplicationRecord
     shared? || owner_id.nil? || (!user.nil? && (owner_id == user.id || user.admin?))
   end
 
-  # "owner/name" -> ["owner", "name"], or nil if it is not one. The owner may be empty.
-  def self.split_ref(ref)
-    owner, name = ref.to_s.split("/", 2)
-    name.to_s.strip.empty? ? nil : [ owner.to_s.strip, name.to_s.strip ]
+  # A project's copy of a script record: the fields a project keeps.
+  def self.script_copy(script)
+    copy = { "name" => script.name, "language" => script.language, "content" => script.content.to_s }
+    copy["priority"] = script.priority unless script.priority.nil?
+    copy["compiled_code"] = script.compiled unless script.compiled.blank?
+    copy
   end
 
   private
 
-  # A list of strings, without repeats: anything else is left for the validation to refuse.
+  # Hashes with string keys, only the known fields, the name trimmed, an empty
+  # source for none: anything else is left for the validation to refuse.
   def clean_scripts
-    return unless scripts.is_a?(Array) && scripts.all?(String)
+    return unless scripts.is_a?(Array) && scripts.all? { |s| s.is_a?(Hash) }
 
-    self.scripts = scripts.map(&:strip).uniq
+    self.scripts = scripts.map do |s|
+      s = s.to_h.transform_keys(&:to_s).slice(*SCRIPT_FIELDS)
+      s["name"] = s["name"].to_s.strip
+      s["content"] = s["content"].to_s
+      s.delete("priority") if s["priority"].nil? || s["priority"] == ""
+      s.delete("compiled_code") if s["compiled_code"].blank?
+      s["priority"] = Integer(s["priority"], exception: false) || s["priority"] if s.key?("priority")
+      s
+    end
   end
 
   def scripts_must_be_usable
-    unless scripts.is_a?(Array) && scripts.all?(String)
-      errors.add(:scripts, "must be a list of \"owner/name\" strings")
+    unless scripts.is_a?(Array) && scripts.all? { |s| s.is_a?(Hash) }
+      errors.add(:scripts, "must be a list of scripts, each with a name, a language and its source")
       return
     end
-    mine = owner_name.to_s.downcase
-    scripts.each do |ref|
-      owner, name = self.class.split_ref(ref)
-      if name.nil?
-        errors.add(:scripts, "#{ref.inspect} is not an \"owner/name\"")
-      elsif !owner.empty? && owner.downcase != mine
-        errors.add(:scripts, "#{ref.inspect} is not the owner's or in the shared space")
+    seen = {}
+    scripts.each_with_index do |s, i|
+      label = s["name"].to_s.empty? ? "script #{i + 1}" : s["name"].inspect
+      errors.add(:scripts, "#{label} has no name") if s["name"].to_s.empty?
+      unless Script::LANGUAGES.include?(s["language"])
+        errors.add(:scripts, "#{label} has no known language (#{Script::LANGUAGES.join(', ')})")
       end
+      if s.key?("priority") && !(s["priority"].is_a?(Integer) && (1..5).cover?(s["priority"]))
+        errors.add(:scripts, "#{label} has a priority that is not a whole number from 1 to 5")
+      end
+      if s.key?("compiled_code")
+        begin
+          JSON.parse(s["compiled_code"].to_s)
+        rescue JSON::ParserError
+          errors.add(:scripts, "#{label} has compiled code that is not valid JSON")
+        end
+      end
+      key = s["name"].to_s.downcase
+      next if key.empty?
+
+      errors.add(:scripts, "#{label} is in the project twice") if seen[key]
+      seen[key] = true
     end
   end
 end

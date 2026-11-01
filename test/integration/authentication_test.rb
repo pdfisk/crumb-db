@@ -45,6 +45,24 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert_equal false, response.parsed_body.dig("user", "admin")
   end
 
+  test "a new user has no database write permission, and the session says so" do
+    user = make_user("alice")
+    assert_equal false, user.has_database_write_permission
+
+    get "/session", headers: bearer(user)
+    assert_equal false, response.parsed_body.dig("user", "has_database_write_permission")
+
+    user.update!(has_database_write_permission: true)
+    get "/session", headers: bearer(user)
+    assert_equal true, response.parsed_body.dig("user", "has_database_write_permission")
+  end
+
+  test "signing in also gives the database write permission" do
+    make_user("alice", has_database_write_permission: true)
+    post "/session", params: { session: { name: "alice", password: ApiHelpers::PASSWORD } }, as: :json
+    assert_equal true, response.parsed_body.dig("user", "has_database_write_permission")
+  end
+
   test "a wrong password, an unknown name and a user with no password are refused alike" do
     make_user("alice")
     User.insert({ name: "legacy", created_at: Time.current, updated_at: Time.current })   # as before sign-in existed

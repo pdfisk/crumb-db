@@ -106,27 +106,26 @@ Signing in and registering are limited to ten tries in three minutes from one ad
 
 A project is a named, ordered list of scripts, with a description. A name is
 unique within a space. The list is the project's `scripts` column: a text column holding JSON (`"[]"` by default), a list
-of `"<owner>/<name>"` strings in order (`"peter/snake"`; an empty owner,
-`"/snake"`, is a script in the shared space). There are no foreign keys between
-projects and scripts: a script can be in any number of projects, and deleting or
-renaming one leaves its name in the lists that have it (clients report it as
-missing). A project can list the owner's scripts and scripts in the shared
-space. (Sharing is a property of the project, not of a script.)
+of the project's own copies of its scripts, in order, each
+`{ "name", "language", "content", "priority", "compiled_code" }` (`priority` and
+`compiled_code` may be left out). The client copies a script record into a
+project when it is added; changing the copy leaves the record as it was, and
+the other way round. Names are unique within a project, ignoring case, and the
+language must be one the scripts table knows. (Sharing is a property of the
+project, not of a script.) Migration `20261101000001` turned the earlier
+`"<owner>/<name>"` references into copies of the scripts as they were then.
 
 A record is `{ id, name, description, owner, shared, scripts, created_at, updated_at }`,
-where `shared` is `true` when the owner has shared the project and `false` (the default) if not, and `scripts` is `["peter/snake", ...]`, in
-order.
+where `shared` is `true` when the owner has shared the project and `false` (the default) if not, and `scripts` is
+`[{ "name": "snake", "language": "python", "content": "..." }, ...]`, in order.
 
 | Request | Does |
 |---|---|
 | `GET /projects` | every project; `?name=` and `?owner=` filter, as for scripts |
 | `GET /projects/:id` | one project |
-| `POST /projects` body `{"project":{"name":"...","description":"...","owner":"peter","shared":false,"scripts":["peter/a","/b"]}}` | creates it |
-| `PATCH /projects/:id` body `{"project":{"scripts":["peter/b","peter/a"]}}` | makes those its scripts, in that order, and no others |
-| `DELETE /projects/:id` | deletes it (204); its scripts are kept |
-
-Each `scripts` entry must be one of the project owner's scripts or one in the
-shared space (the script need not exist yet).
+| `POST /projects` body `{"project":{"name":"...","description":"...","owner":"peter","shared":false,"scripts":[{"name":"a","language":"python","content":"print(1)"}]}}` | creates it |
+| `PATCH /projects/:id` body `{"project":{"scripts":[{"name":"b","language":"python","content":"..."}]}}` | makes those its scripts, in that order, and no others |
+| `DELETE /projects/:id` | deletes it (204), with its copies; the scripts table is untouched |
 
 ## Synchronize the local and remote databases
 

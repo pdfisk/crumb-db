@@ -7,8 +7,9 @@ class LocalUser
   def id = nil
   def name = "local"
   def admin? = true
+  def has_database_write_permission = true
 
   def as_json(*)
-    { "id" => nil, "name" => name, "admin" => true }
+    { "id" => nil, "name" => name, "admin" => true, "has_database_write_permission" => true }
   end
 end

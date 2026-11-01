@@ -4,7 +4,9 @@
 #     201 with {"token": "...", "user": {...}} - send the token as
 #     "Authorization: Bearer <token>". 401 for a wrong name or password (the
 #     answer is the same for both). Ten tries in three minutes from one address.
-#   GET /session    who the token belongs to (401 if it is not valid)
+#   GET /session    who the token belongs to (401 if it is not valid). The user
+#     includes "has_database_write_permission": a client shows no Save in the
+#     Database windows when it is false.
 #   DELETE /session signs out: the token stops working (204)
 class SessionsController < ApplicationController
   # A bad token must not stop a client from signing in again.
@@ -40,6 +42,6 @@ class SessionsController < ApplicationController
   def user_json(user)
     return user.as_json if user.is_a?(LocalUser)
 
-    user.as_json(only: %i[id name]).merge("admin" => user.admin?)
+    user.as_json(only: %i[id name has_database_write_permission]).merge("admin" => user.admin?)
   end
 end
