@@ -18,8 +18,29 @@ class Project < ApplicationRecord
   # The fields a project's script may have; anything else is dropped.
   SCRIPT_FIELDS = %w[name language content priority compiled_code].freeze
 
-  # Kept as JSON text in a text column ("[]" by default).
-  serialize :scripts, type: Array, coder: JSON
+  # The scripts column: JSON text, read as a list. An empty list is written as
+  # "[]". (`serialize ..., type: Array` writes it as NULL, since it treats the
+  # empty list as its default, and the column is NOT NULL.) A value that is
+  # not a list is kept as it is, for the validation to refuse.
+  class ScriptList < ActiveRecord::Type::Value
+    def type = :text
+
+    def deserialize(value)
+      return [] if value.nil?
+
+      value.is_a?(String) ? (JSON.parse(value) rescue []) : value
+    end
+
+    def serialize(value)
+      (value.nil? ? [] : value).to_json
+    end
+
+    def changed_in_place?(raw_old_value, new_value)
+      deserialize(raw_old_value) != new_value
+    end
+  end
+
+  attribute :scripts, ScriptList.new, default: -> { [] }
 
   before_validation { self.name = name.to_s.strip }
   before_validation :clean_scripts

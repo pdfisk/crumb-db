@@ -67,6 +67,16 @@ class ProjectsAndViewportsTest < ActionDispatch::IntegrationTest
     assert_equal [], response.parsed_body["scripts"]
   end
 
+  test "a new project may have no scripts, and an empty list is stored as one" do
+    post "/projects", params: { project: { name: "empty", scripts: [] } }, headers: bearer(@bob), as: :json
+    assert_response :created
+    assert_equal [], response.parsed_body["scripts"]
+    post "/projects", params: { project: { name: "bare" } }, headers: bearer(@bob), as: :json
+    assert_response :created
+    assert_equal [], response.parsed_body["scripts"]
+    assert_equal "[]", Project.connection.select_value("SELECT scripts FROM projects WHERE name = 'bare'")
+  end
+
   test "a project's scripts need a name, a known language and names of their own" do
     bad = [
       [ { language: "python", content: "x" } ],
