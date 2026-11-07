@@ -3,7 +3,7 @@
 # to restrict it; defaults to any origin.
 Rails.application.config.middleware.insert_before 0, Rack::Cors do
   allow do
-    origins(*ENV.fetch("CORS_ORIGINS", "*").split(",").map(&:strip))
+    origins(*ENV.fetch("CORS_ORIGINS", "http://localhost:8080,https://fastblips.com,https://www.fastblips.com,app://fastblips").split(",").map(&:strip))
 
     resource "*",
       headers: :any,
