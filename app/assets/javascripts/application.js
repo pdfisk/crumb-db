@@ -1,2 +1,1 @@
-// The forum's script. Thredded's is added here in Phase 2:
-//   //= require thredded
+// The forum's script. Thredded's script is required here in Phase 2.
