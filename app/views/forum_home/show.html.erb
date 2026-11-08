@@ -1,0 +1,8 @@
+<section class="forum-card">
+  <h1>The FastBlips forum is on its way</h1>
+  <% if current_forum_user %>
+    <p>You are signed in as <strong><%= current_forum_user.name %></strong>.</p>
+  <% else %>
+    <p><a href="<%= forum_sign_in_path %>">Sign in</a> with your FastBlips name and password.</p>
+  <% end %>
+</section>

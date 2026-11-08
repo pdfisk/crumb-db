@@ -11,11 +11,12 @@ gem "rack-cors"
 gem "bcrypt", "~> 3.1"
 gem "bootsnap", require: false
 
+# The forum's pages: the asset pipeline, and Sass for Thredded's stylesheets.
+gem "sprockets-rails"
+gem "dartsass-sprockets"
+
 # Windows does not include zoneinfo files
 gem "tzinfo-data", platforms: %i[windows jruby]
-
-# Ruby 3.5+/4.0 no longer ships fiddle as a default gem; irb/reline need it on Windows
-gem "fiddle", platforms: %i[windows]
 
 group :development, :test do
   gem "dotenv-rails"
