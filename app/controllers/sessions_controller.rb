@@ -8,7 +8,7 @@
 #     includes "has_database_write_permission": a client shows no Save in the
 #     Database windows when it is false.
 #   DELETE /session signs out: the token stops working (204)
-class SessionsController < ApplicationController
+class SessionsController < ApiController
   # A bad token must not stop a client from signing in again.
   skip_before_action :authenticate, only: :create
   before_action :require_login!, only: %i[show destroy]

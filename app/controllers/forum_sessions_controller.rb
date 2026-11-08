@@ -4,7 +4,7 @@
 #   GET    /sign_in   the form (return_to: where to go afterwards)
 #   POST   /sign_in   signs in; ten tries in three minutes from one address
 #   DELETE /sign_out  signs out
-class ForumSessionsController < ForumBaseController
+class ForumSessionsController < ApplicationController
   rate_limit to: 10, within: 3.minutes, only: :create,
              with: -> { too_many_tries }
 

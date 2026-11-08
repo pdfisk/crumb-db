@@ -15,7 +15,8 @@ class ForumSessionsTest < ActionDispatch::IntegrationTest
     post "/sign_in", params: { name: "Alice", password: ApiHelpers::PASSWORD }
     assert_redirected_to "/"
     follow_redirect!
-    assert_select "strong", "alice"
+    assert_response :success
+    assert_select ".forum-user", "alice"
   end
 
   test "a wrong password is refused and says so" do
@@ -41,7 +42,7 @@ class ForumSessionsTest < ActionDispatch::IntegrationTest
     delete "/sign_out"
     assert_redirected_to "/"
     follow_redirect!
-    assert_select "strong", false
+    assert_select ".forum-user", false
   end
 
   test "forum pages are not served on other hosts" do

@@ -43,4 +43,25 @@ class User < ApplicationRecord
   def admin?
     ENV.fetch("ADMIN_USERS", "").split(",").map { |n| n.strip.downcase }.include?(name.downcase)
   end
+
+  # ---- the forum (Thredded) ------------------------------------------------
+  # Thredded adds its own versions of these to User; these replace them, so
+  # that ADMIN_USERS stays the one list of administrators.
+
+  # Administrators and forum moderators (the forum_moderator column).
+  def forum_staff?
+    admin? || forum_moderator?
+  end
+
+  def thredded_admin?
+    admin?
+  end
+
+  def thredded_can_moderate_messageboards
+    forum_staff? ? Thredded::Messageboard.all : Thredded::Messageboard.none
+  end
+
+  def thredded_can_moderate_messageboard?(_messageboard)
+    forum_staff?
+  end
 end

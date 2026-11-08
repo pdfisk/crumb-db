@@ -16,10 +16,10 @@ module Server
     config.load_defaults 8.0
     config.autoload_lib(ignore: %w[assets tasks])
 
-    # The API is JSON only: its controllers (ApplicationController) answer
-    # bearer-token requests and ignore cookies. The forum (ForumBaseController)
-    # is HTML pages with a cookie session, on its own host, so the middleware an
-    # API-only app leaves out is added back for it.
+    # The API is JSON only: its controllers (ApiController) answer bearer-token
+    # requests and ignore cookies. The forum (ApplicationController and
+    # Thredded) is HTML pages with a cookie session, on its own host, so the
+    # middleware an API-only app leaves out is added back for it.
     config.api_only = true
 
     # The forum's address: FORUM_HOST, else forum.fastblips.com in production

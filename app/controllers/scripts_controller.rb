@@ -7,7 +7,7 @@
 # The last two are the addresses the crumb client used when each language
 # had a table of its own. Their routes fix the language (see routes.rb), so
 # they list, find, create and change only scripts in that language.
-class ScriptsController < ApplicationController
+class ScriptsController < ApiController
   include OwnerParams
 
   before_action :require_login!, only: %i[create update destroy]

@@ -5,7 +5,7 @@
 # (see Project). "scripts" in a body sets the list: those, in that order, and
 # no others. Names must be unique within the project, ignoring case. "shared"
 # (true or false, default false) says whether the owner has shared the project.
-class ProjectsController < ApplicationController
+class ProjectsController < ApiController
   include OwnerParams
 
   before_action :require_login!, only: %i[create update destroy]

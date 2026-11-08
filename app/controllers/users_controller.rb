@@ -11,7 +11,7 @@
 #
 # Answers the registered user called :name (whatever its case) or 404, so a
 # client can tell whether a name is taken.
-class UsersController < ApplicationController
+class UsersController < ApiController
   # A stale token must not stop someone from registering.
   skip_before_action :authenticate, only: :create
 

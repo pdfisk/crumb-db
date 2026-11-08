@@ -1,12 +1,14 @@
-// The forum's styles. Thredded's are imported here in Phase 2, after its
-// variables are set, e.g.:
-//   $thredded-brand: #2f6fde;
-//   @import "thredded";
+// The forum's styles: Thredded's, coloured to match, then the FastBlips header
+// and sign-in page.
 
 $forum-ink: #1d2433;
 $forum-muted: #5b6475;
 $forum-line: #dde1e8;
 $forum-brand: #2f6fde;
+
+$thredded-brand: $forum-brand;
+$thredded-text-color: $forum-ink;
+@import "thredded";
 
 body {
   margin: 0;

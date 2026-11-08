@@ -2,7 +2,7 @@
 <section class="forum-card">
   <h1>Sign in</h1>
   <p>Use the name and password you use in the FastBlips IDE.</p>
-  <%= form_with url: forum_sign_in_path, method: :post, local: true do |f| %>
+  <%= form_with url: main_app.forum_sign_in_path, method: :post, local: true do |f| %>
     <%= hidden_field_tag :return_to, @return_to %>
     <p>
       <%= label_tag :name, "Name" %>

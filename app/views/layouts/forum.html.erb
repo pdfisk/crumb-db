@@ -3,21 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title><%= content_for?(:title) ? "#{yield(:title)} · " : "" %>FastBlips Forum</title>
+  <%# Thredded's pages set :thredded_page_title; the sign-in page sets :title. %>
+  <% page_title = content_for?(:thredded_page_title) ? yield(:thredded_page_title) : yield(:title) %>
+  <title><%= page_title.present? ? "#{page_title} · " : "" %>FastBlips Forum</title>
   <%= csrf_meta_tags %>
   <%= stylesheet_link_tag "application" %>
   <%= javascript_include_tag "application", defer: true %>
 </head>
 <body>
+  <%# Thredded's pages are rendered here too, so the app's own routes go through main_app. %>
   <header class="forum-mast">
     <a class="forum-brand" href="<%= forum_root_path %>">FastBlips <span>Forum</span></a>
     <nav>
       <a href="https://fastblips.com">Open the IDE</a>
       <% if current_forum_user %>
         <span class="forum-user"><%= current_forum_user.name %></span>
-        <%= button_to "Sign out", forum_sign_out_path, method: :delete, class: "forum-link-button" %>
+        <%= button_to "Sign out", main_app.forum_sign_out_path, method: :delete, class: "forum-link-button" %>
       <% else %>
-        <a href="<%= forum_sign_in_path %>">Sign in</a>
+        <a href="<%= main_app.forum_sign_in_path(return_to: request.fullpath) %>">Sign in</a>
       <% end %>
     </nav>
   </header>

@@ -15,6 +15,9 @@ gem "bootsnap", require: false
 gem "sprockets-rails"
 gem "dartsass-sprockets"
 
+# The forum engine (config/initializers/thredded.rb). Needs Ruby < 4.0.
+gem "thredded", "~> 1.2"
+
 # Windows does not include zoneinfo files
 gem "tzinfo-data", platforms: %i[windows jruby]
 

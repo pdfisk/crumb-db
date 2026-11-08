@@ -1,4 +1,4 @@
-class ViewportsController < ApplicationController
+class ViewportsController < ApiController
   include OwnerParams
 
   before_action :require_login!, only: %i[create update destroy]
