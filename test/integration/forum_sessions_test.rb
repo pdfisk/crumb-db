@@ -51,14 +51,25 @@ class ForumSessionsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "the API still ignores the forum cookie" do
+  test "the API ignores the forum cookie, even when it is sent there" do
     make_user("alice")
     post "/sign_in", params: { name: "alice", password: ApiHelpers::PASSWORD }
+    forum_cookie = cookies["_fastblips_forum"]
+    assert forum_cookie.present?
+
+    # Browsers never send it to the API (the cookie belongs to the forum host);
+    # send it by hand to show the API would not use it anyway.
+    host! "api.fastblips.com"
     with_local_trust_off do
-      get "/session"
+      get "/session", headers: { "Cookie" => "_fastblips_forum=#{forum_cookie}" }
     end
     assert_response :unauthorized
     assert_match "application/json", response.media_type
+  end
+
+  test "API paths are not served on the forum host" do
+    get "/session"
+    assert_response :not_found
   end
 
   private
