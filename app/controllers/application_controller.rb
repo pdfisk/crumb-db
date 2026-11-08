@@ -40,9 +40,7 @@ class ApplicationController < ActionController::Base
   end
 
   # Where to go after signing in: a path on this host, else the front page.
-  # "//host" and "/\\host" are refused: browsers treat them as other sites.
   def safe_return_to(path)
-    path = path.to_s
-    path.start_with?("/") && !path.start_with?("//", "/\\") ? path : forum_root_path
+    ForumHandoff.local_path(path) || forum_root_path
   end
 end

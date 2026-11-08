@@ -25,6 +25,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_152936) do
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
   end
 
+  create_table "forum_handoffs", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "code_digest", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["code_digest"], name: "index_forum_handoffs_on_code_digest", unique: true
+    t.index ["user_id"], name: "index_forum_handoffs_on_user_id"
+  end
+
   create_table "friendly_id_slugs", force: :cascade do |t|
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
@@ -326,6 +337,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_152936) do
   end
 
   add_foreign_key "api_tokens", "users", on_delete: :cascade
+  add_foreign_key "forum_handoffs", "users", on_delete: :cascade
   add_foreign_key "projects", "users", column: "owner_id"
   add_foreign_key "scripts", "users", column: "owner_id"
   add_foreign_key "thredded_messageboard_users", "thredded_messageboards", on_delete: :cascade

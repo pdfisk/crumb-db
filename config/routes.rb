@@ -5,6 +5,7 @@ Rails.application.routes.draw do
     get    "sign_in"  => "forum_sessions#new",     as: :forum_sign_in
     post   "sign_in"  => "forum_sessions#create"
     delete "sign_out" => "forum_sessions#destroy", as: :forum_sign_out
+    get    "sso"      => "forum_sessions#sso",     as: :forum_sso
 
     # Thredded: boards, topics, posts, moderation. Mounted last, so the
     # routes above come first.
@@ -24,4 +25,7 @@ Rails.application.routes.draw do
   resources :projects
   resources :users, only: %i[create show]
   resource :session, only: %i[show create destroy]
+
+  # A one-time link that opens the forum signed in (ForumHandoffsController).
+  post "forum_handoff" => "forum_handoffs#create"
 end
