@@ -11,7 +11,8 @@ gem "rack-cors"
 gem "bcrypt", "~> 3.1"
 gem "bootsnap", require: false
 
-# The forum's pages: the asset pipeline, and Sass for Thredded's stylesheets.
+# Thredded's engine needs Sprockets to boot, and in development and test it
+# refuses to start without a Sass compiler. No assets are served.
 gem "sprockets-rails"
 gem "dartsass-sprockets"
 

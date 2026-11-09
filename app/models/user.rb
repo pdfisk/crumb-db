@@ -8,7 +8,6 @@ class User < ApplicationRecord
   has_secure_password
 
   has_many :api_tokens, dependent: :delete_all
-  has_many :forum_handoffs, dependent: :delete_all
   has_many :scripts, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error
   has_many :viewports, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error
   has_many :projects, foreign_key: :owner_id, inverse_of: :owner, dependent: :restrict_with_error

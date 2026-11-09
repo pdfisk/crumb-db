@@ -1,37 +1,29 @@
 require "test_helper"
 
-# The forum (Thredded) on the forum host: pages, sign-in and permissions.
+# The forum's set-up (config/initializers/thredded.rb): who moderates, avatars,
+# and that Thredded's web pages are not served - the forum is used from the
+# IDE, through the JSON forum API (forum_api_test.rb).
 class ForumTest < ActionDispatch::IntegrationTest
   setup do
-    host! Rails.configuration.x.forum_host
     @board = Thredded::Messageboard.create!(name: "Getting started", description: "First questions")
   end
 
-  test "anyone can read the boards" do
-    get "/"
-    assert_response :success
-    assert_select "body", /Getting started/
-    assert_select "a", "Sign in"
+  test "there are no forum web pages, on any host" do
+    %w[api.fastblips.com forum.fastblips.com forum.localhost].each do |host|
+      host! host
+      get "/#{@board.slug}"
+      assert_response :not_found, host
+      get "/sign_in"
+      assert_response :not_found, host
+    end
   end
 
-  test "a board's page uses the FastBlips layout" do
-    get "/#{@board.slug}"
-    assert_response :success
-    assert_select ".forum-mast"
-  end
-
-  test "a signed-in user sees their name on Thredded's pages" do
-    make_user("alice")
-    post "/sign_in", params: { name: "alice", password: ApiHelpers::PASSWORD }
-    get "/#{@board.slug}"
-    assert_response :success
-    assert_select ".forum-user", "alice"
-  end
-
-  test "the forum is not served on other hosts" do
+  test "the API answers JSON with no cookie" do
     host! "api.fastblips.com"
-    get "/#{@board.slug}"
-    assert_response :not_found
+    get "/forum"
+    assert_response :success
+    assert_equal "application/json", response.media_type
+    assert_nil response.headers["Set-Cookie"]
   end
 
   test "administrators come from ADMIN_USERS and moderate every board" do
@@ -55,5 +47,9 @@ class ForumTest < ActionDispatch::IntegrationTest
     url = Thredded.avatar_url.call(make_user("alice"))
     assert url.start_with?("data:image/svg+xml;base64,")
     assert_includes Base64.decode64(url.split(",", 2).last), ">A<"
+  end
+
+  test "no notification email is sent" do
+    assert_empty Thredded.notifiers
   end
 end
