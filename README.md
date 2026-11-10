@@ -191,7 +191,7 @@ git push heroku main              # Procfile release phase runs db:migrate
 
 Heroku sets `DATABASE_URL` and `SECRET_KEY_BASE` automatically. Set `ADMIN_USERS` (see
 Sign-in and permissions) to the names allowed to change the shared space. Optional config vars:
-`CORS_ORIGINS` (comma-separated, default `*`), `RAILS_MAX_THREADS`, `WEB_CONCURRENCY`, `RAILS_LOG_LEVEL`.
+`CORS_ORIGINS` (comma-separated; replaces the default list in `config/initializers/cors.rb`, which includes `app://fastblips` for the desktop app), `RAILS_MAX_THREADS`, `WEB_CONCURRENCY`, `RAILS_LOG_LEVEL`.
 
 Migrations use `if_not_exists`, so they're safe on a database where the tables already exist.
 
