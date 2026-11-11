@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_09_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_11_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -61,6 +61,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_09_000001) do
     t.text "compiled"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "category", default: "game", null: false
+    t.index ["category"], name: "index_scripts_on_category"
     t.index ["language", "name"], name: "index_scripts_on_language_and_name"
     t.index ["name"], name: "index_scripts_on_name"
     t.index ["owner_id", "name"], name: "index_scripts_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"

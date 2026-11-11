@@ -17,6 +17,7 @@ class Script < ApplicationRecord
                    if: :owner_id?
   validates :language, inclusion: { in: LANGUAGES }
   validates :visibility, inclusion: { in: VISIBILITIES }
+  validates :category, presence: true, length: { maximum: 40 }
   validates :version, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validates :priority, numericality: { only_integer: true, in: 1..5 }
   validate :compiled_code_must_be_valid_json

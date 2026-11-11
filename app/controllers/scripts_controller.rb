@@ -15,12 +15,13 @@ class ScriptsController < ApiController
   before_action :authorize_modify!, only: %i[update destroy]
 
   # GET /scripts  (optional ?name= ?owner= ?language= ?owner_id= ?visibility=
-  # filters). Public scripts and the caller's own; unlisted ones too when the
-  # request names both an owner and a name.
+  # ?category= filters). Public scripts and the caller's own; unlisted ones
+  # too when the request names both an owner and a name.
   def index
     exact = params[:owner].present? && params[:name].present?
     records = in_space(scripts.listed_for(current_user, include_unlisted: exact)).order(:id)
     records = records.where(name: params[:name]) if params[:name].present?
+    records = records.where(category: params[:category]) if params[:category].present?
     unless fixed_language
       %i[language owner_id visibility].each do |field|
         records = records.where(field => params[field]) if params[field].present?
@@ -79,11 +80,11 @@ class ScriptsController < ApiController
   def record_params
     if fixed_language
       body = params.require(:"#{fixed_language}_source")
-      attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code)
+      attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code, :category)
     else
       body = params.require(:script)
       attrs = body.permit(:name, :content, :priority, :compiled, :compiled_code,
-                          :language, :visibility, :version)
+                          :language, :visibility, :version, :category)
     end
     with_owner(attrs, body)
   end
