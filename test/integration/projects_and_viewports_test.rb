@@ -40,6 +40,20 @@ class ProjectsAndViewportsTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "a project's category is development by default, can be set, is checked and filters the list" do
+    assert_equal "development", @shared.reload.category
+    post "/projects", params: { project: { name: "racer", category: "mobile-game", shared: true } }, headers: bearer(@bob), as: :json
+    assert_response :created
+    assert_equal "mobile-game", response.parsed_body["category"]
+    patch "/projects/#{@shared.id}", params: { project: { category: "desktop-app" } }, headers: bearer(@alice), as: :json
+    assert_response :success
+    assert_equal "desktop-app", response.parsed_body["category"]
+    patch "/projects/#{@shared.id}", params: { project: { category: "music" } }, headers: bearer(@alice), as: :json
+    assert_response :unprocessable_entity
+    get "/projects", params: { category: "mobile-game" }
+    assert_equal %w[racer], names(response.parsed_body)
+  end
+
   test "a new project goes in the caller's space and cannot name another's" do
     post "/projects", params: { project: { name: "bobs" } }, headers: bearer(@bob), as: :json
     assert_response :created

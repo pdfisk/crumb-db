@@ -12,8 +12,12 @@
 # (and the other way round). Names are unique within a project, ignoring case.
 #
 # "shared" is true when the owner has shared the project (false by default).
+# "category" says what kind of project it is (CATEGORIES; development by
+# default): the mobile start page lists the shared mobile-game projects.
 class Project < ApplicationRecord
   include Owned
+
+  CATEGORIES = %w[development desktop-game desktop-app mobile-game mobile-app].freeze
 
   # The fields a project's script may have; anything else is dropped.
   SCRIPT_FIELDS = %w[name language content priority compiled_code].freeze
@@ -48,6 +52,7 @@ class Project < ApplicationRecord
   # One project per name in each user's space, and in the shared one.
   validates :name, presence: true, uniqueness: { scope: :owner_id }
   validates :shared, inclusion: { in: [true, false] }
+  validates :category, inclusion: { in: CATEGORIES }
   validate :scripts_must_be_usable
 
   # The projects this user may see: shared ones, ones in the shared space and

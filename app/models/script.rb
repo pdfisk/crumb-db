@@ -9,8 +9,9 @@ class Script < ApplicationRecord
 
   LANGUAGES = %w[basic python].freeze
   VISIBILITIES = %w[public unlisted private].freeze
-  # game is a mobile game (tap or click); desktop-game is played with the keyboard.
-  CATEGORIES = %w[game desktop-game getting-started tutorial widget].freeze
+  # mobile-game is played by tapping or clicking, desktop-game with the
+  # keyboard: the same names as Project::CATEGORIES.
+  CATEGORIES = %w[mobile-game desktop-game getting-started tutorial widget].freeze
 
   validates :name, presence: true
   # One script per name in a user's space. The shared space allows repeats, as
