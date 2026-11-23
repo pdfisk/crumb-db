@@ -18,7 +18,7 @@ gem "dartsass-sprockets"
 
 # The forum engine (config/initializers/thredded.rb). Needs Ruby < 4.0.
 gem "thredded", "~> 1.2"
-gem "fiddle", "~> 1.1.8"
+# gem "fiddle", "~> 1.1.8"
 
 # json 3 refuses the quirks_mode option that Rails 8.0's JSON decoder still
 # passes ("unknown keyword: quirks_mode" on every JSON request). Thredded's

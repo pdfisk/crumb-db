@@ -69,10 +69,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_12_000002) do
     t.index ["name"], name: "index_scripts_on_name"
     t.index ["owner_id", "name"], name: "index_scripts_on_owner_and_name", unique: true, where: "(owner_id IS NOT NULL)"
     t.index ["owner_id"], name: "index_scripts_on_owner_id"
-    t.check_constraint "language::text = ANY (ARRAY['basic'::character varying, 'python'::character varying]::text[])", name: "scripts_language_known"
+    t.check_constraint "language::text = ANY (ARRAY['basic'::character varying::text, 'python'::character varying::text])", name: "scripts_language_known"
     t.check_constraint "priority >= 1 AND priority <= 5", name: "scripts_priority_range"
     t.check_constraint "version >= 1", name: "scripts_version_positive"
-    t.check_constraint "visibility::text = ANY (ARRAY['public'::character varying, 'unlisted'::character varying, 'private'::character varying]::text[])", name: "scripts_visibility_known"
+    t.check_constraint "visibility::text = ANY (ARRAY['public'::character varying::text, 'unlisted'::character varying::text, 'private'::character varying::text])", name: "scripts_visibility_known"
   end
 
   create_table "thredded_categories", force: :cascade do |t|

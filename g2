@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Linux equivalent of g2.ps1: use .env2 and start the Rails server
+set -euo pipefail
+cd "$(dirname "$0")"
+cp .env2 .env
+rails server
